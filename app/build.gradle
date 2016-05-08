@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'android-apt'
 
 android {
   compileSdkVersion 23
@@ -33,4 +34,13 @@ dependencies {
   compile "com.android.support:design:${android_support_lib_version}"
   compile "com.android.support:appcompat-v7:${android_support_lib_version}"
   compile "com.android.support:support-annotations:${android_support_lib_version}"
+  compile 'com.jakewharton:butterknife:7.0.1'
+  compile "io.reactivex:rxjava:${rxjava_lib_version}"
+  compile 'io.reactivex:rxandroid:1.1.0'
+  compile "com.jakewharton.rxbinding:rxbinding:${rxbinding_lib_version}"
+  compile "com.jakewharton.rxbinding:rxbinding-appcompat-v7:${rxbinding_lib_version}"
+  compile "com.jakewharton.rxbinding:rxbinding-design:${rxbinding_lib_version}"
+  compile "com.jakewharton.rxbinding:rxbinding-recyclerview-v7:${rxbinding_lib_version}"
+  compile "com.github.frankiesardo:auto-parcel:${auto_parcel_lib_version}"
+  apt "com.github.frankiesardo:auto-parcel-processor:${auto_parcel_lib_version}"
 }

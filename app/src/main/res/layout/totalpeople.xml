@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.solera.defragsample.TotalPeopleView xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@color/colorPrimaryDark"
+  android:padding="16dp"
+  tools:context="com.solera.defragsample.MainActivity"
+  >
+
+  <RelativeLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_vertical"
+    >
+
+    <TextView
+      android:id="@+id/textview"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="Total people"
+      android:textSize="32sp"
+      />
+
+    <FrameLayout
+      android:id="@+id/container"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_alignParentEnd="true"
+      android:layout_alignParentRight="true"
+      android:layout_alignTop="@id/textview"
+      >
+
+      <android.support.design.widget.FloatingActionButton
+        android:id="@+id/button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:scaleX="0"
+        android:scaleY="0"
+        />
+
+      <TextView
+        android:id="@+id/textview_number"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:elevation="16dp"
+        android:textColor="#FFFFFF"
+        android:textSize="32sp"
+        android:scaleX="0"
+        android:scaleY="0"
+        />
+    </FrameLayout>
+
+    <android.support.v7.widget.AppCompatSeekBar
+      android:id="@+id/seekbar"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_below="@id/textview"
+      android:layout_toLeftOf="@id/container"
+      android:layout_toStartOf="@id/container"
+      />
+  </RelativeLayout>
+</com.solera.defragsample.TotalPeopleView>

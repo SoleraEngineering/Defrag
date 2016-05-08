@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.solera.defragsample.BreakdownView xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@color/colorPrimaryDark"
+  android:padding="16dp"
+  tools:context="com.solera.defragsample.MainActivity"
+  >
+
+  <RelativeLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_vertical"
+    >
+
+    <TextView
+      android:id="@+id/textview_title"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="Breakdown"
+      android:textSize="48sp"
+      />
+
+    <TextView
+      android:id="@+id/textview_cost"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_below="@id/textview_title"
+      android:text="Total Cost"
+      android:textSize="32sp"
+      />
+
+    <TextView
+      android:id="@+id/textview_people"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_below="@id/textview_cost"
+      android:text="People"
+      android:textSize="32sp"
+      />
+
+    <TextView
+      android:id="@+id/textview_perperson"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_below="@id/textview_people"
+      android:text="Per person"
+      android:textSize="32sp"
+      />
+
+    <TextView
+      android:id="@+id/textview_costvalue"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_alignBaseline="@id/textview_cost"
+      android:layout_alignParentEnd="true"
+      android:layout_alignParentRight="true"
+      android:textSize="32sp"
+      />
+
+    <TextView
+      android:id="@+id/textview_peoplevalue"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_alignBaseline="@id/textview_people"
+      android:layout_alignParentEnd="true"
+      android:layout_alignParentRight="true"
+      android:textSize="32sp"
+      />
+
+    <TextView
+      android:id="@+id/textview_perpersonvalue"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_alignBaseline="@id/textview_perperson"
+      android:layout_alignParentEnd="true"
+      android:layout_alignParentRight="true"
+      android:textSize="32sp"
+      />
+  </RelativeLayout>
+</com.solera.defragsample.BreakdownView>
