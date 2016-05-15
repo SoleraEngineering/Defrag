@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.solera.defragsample;
+package com.solera.defrag;
 
-import android.content.Context;
-import android.support.annotation.NonNull;
-
-/**
- * Based presenter view interface.
- */
-public interface PresenterView {
-  @NonNull Context getContext();
+public enum TraversingState {
+  IDLE,
+  PUSHING,
+  POPPING,
+  REPLACING
 }

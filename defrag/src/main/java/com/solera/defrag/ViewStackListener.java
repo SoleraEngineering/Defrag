@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.solera.defragsample;
+package com.solera.defrag;
 
-import android.content.Context;
 import android.support.annotation.NonNull;
 
 /**
- * Based presenter view interface.
+ * Interface definition of a callback for when the traversal state has changed in the ViewStack.
  */
-public interface PresenterView {
-  @NonNull Context getContext();
+public interface ViewStackListener {
+  /**
+   * Called when the ViewStack is changing state.
+   */
+  void onTraversing(@NonNull TraversingState traversingState);
 }
