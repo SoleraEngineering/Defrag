@@ -24,7 +24,7 @@ import rx.functions.Func1;
 
 public class TotalPeoplePresenter extends Presenter<TotalPeoplePresenter.View> {
   public static void push(@NonNull ViewStack viewStack, int totalCost) {
-    viewStack.push(R.layout.totalpeople, Integer.valueOf(totalCost));
+    viewStack.push(R.layout.totalpeople, totalCost);
   }
 
   @Override protected void onTakeView() {
@@ -48,7 +48,7 @@ public class TotalPeoplePresenter extends Presenter<TotalPeoplePresenter.View> {
       @Override public void call(Integer totalPeople) {
         getView().showBreakdown(totalCost,totalPeople);
       }
-    });
+    }, getDefaultErrorAction());
   }
 
   @NonNull private Subscription onTotalPeopleChanged() {
@@ -60,7 +60,7 @@ public class TotalPeoplePresenter extends Presenter<TotalPeoplePresenter.View> {
       @Override public void call(Boolean isValid) {
         getView().enableSubmit(isValid);
       }
-    });
+    }, getDefaultErrorAction());
   }
 
   public interface View extends PresenterView {
