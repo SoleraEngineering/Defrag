@@ -57,7 +57,7 @@ public class TotalCostPresenter extends Presenter<TotalCostPresenter.View> {
       @Override public void call(Boolean isValid) {
         view.enableSubmit(isValid);
       }
-    });
+    }, getDefaultErrorAction());
   }
 
   public interface View extends PresenterView {

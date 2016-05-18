@@ -18,6 +18,8 @@ package com.solera.defragsample;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import rx.Subscription;
+import rx.exceptions.OnErrorNotImplementedException;
+import rx.functions.Action1;
 import rx.subscriptions.CompositeSubscription;
 
 /**
@@ -45,7 +47,7 @@ public abstract class Presenter<T extends PresenterView> {
   public final void dropView() {
     onDropView();
     mView = null;
-    mViewSubscriptions.unsubscribe();
+    mViewSubscriptions.clear();
   }
 
   protected void onDropView() {
@@ -74,4 +76,20 @@ public abstract class Presenter<T extends PresenterView> {
   public final void removeViewSubscription(@NonNull Subscription subscription) {
     mViewSubscriptions.remove(subscription);
   }
+
+
+  /**
+   * Returns default error action, as per Dan Lew advice from common RxJava mistakes.
+   * https://speakerdeck.com/dlew/common-rxjava-mistakes
+   */
+  protected Action1<Throwable> getDefaultErrorAction() {
+    return new Action1<Throwable>() {
+      @Override
+      public void call(Throwable throwable) {
+        throw new OnErrorNotImplementedException("RxError source", throwable);
+      }
+    };
+
+  }
+
 }
