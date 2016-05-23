@@ -98,6 +98,8 @@ Retrieving the result is similiar to getting Parameters (and is persisted when t
   final String result = viewStack.getResult();
 ```
 
+Take a look at the [sample app](https://github.com/R3PI/Defrag/tree/master/app) for an example implementation.
+
 Thanks to
 ---
 The inspiration of this library was from Square's article on Fragments, and from their library Flow (https://github.com/square/flow).
