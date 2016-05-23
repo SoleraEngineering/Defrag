@@ -1,0 +1,47 @@
+apply plugin: 'com.android.application'
+apply plugin: 'android-apt'
+
+android {
+  compileSdkVersion 23
+  buildToolsVersion '23.0.2'
+
+  defaultConfig {
+    applicationId "com.solera.defragsample"
+    minSdkVersion 16
+    targetSdkVersion 23
+    versionCode 1
+    versionName "1.0"
+  }
+  buildTypes {
+    release {
+      minifyEnabled false
+      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+    }
+  }
+  dexOptions {
+    incremental true
+  }
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_7
+    targetCompatibility JavaVersion.VERSION_1_7
+  }
+}
+
+dependencies {
+  compile project(':defrag')
+
+  compile 'com.android.support:appcompat-v7:23.3.0'
+  testCompile 'junit:junit:4.12'
+  compile "com.android.support:design:${android_support_lib_version}"
+  compile "com.android.support:appcompat-v7:${android_support_lib_version}"
+  compile "com.android.support:support-annotations:${android_support_lib_version}"
+  compile 'com.jakewharton:butterknife:7.0.1'
+  compile "io.reactivex:rxjava:${rxjava_lib_version}"
+  compile 'io.reactivex:rxandroid:1.1.0'
+  compile "com.jakewharton.rxbinding:rxbinding:${rxbinding_lib_version}"
+  compile "com.jakewharton.rxbinding:rxbinding-appcompat-v7:${rxbinding_lib_version}"
+  compile "com.jakewharton.rxbinding:rxbinding-design:${rxbinding_lib_version}"
+  compile "com.jakewharton.rxbinding:rxbinding-recyclerview-v7:${rxbinding_lib_version}"
+  compile "com.github.frankiesardo:auto-parcel:${auto_parcel_lib_version}"
+  apt "com.github.frankiesardo:auto-parcel-processor:${auto_parcel_lib_version}"
+}
