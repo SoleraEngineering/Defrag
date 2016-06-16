@@ -120,14 +120,18 @@ public class ViewStack {
    */
   public boolean onBackPressed() {
     final View topView = getTopView();
-    if (topView instanceof HandlesBackPresses) {
+    if (topView != null && topView instanceof HandlesBackPresses) {
       return ((HandlesBackPresses) topView).onBackPressed();
     }
     return pop();
   }
 
-  @NonNull public View getTopView() {
-    return mViewStack.peek().getView();
+  @Nullable public View getTopView() {
+    final ViewStackEntry peek = mViewStack.peek();
+    if (peek != null) {
+      return peek.getView();
+    }
+    return null;
   }
 
   public boolean pop() {
