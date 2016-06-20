@@ -4,7 +4,7 @@ apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'android-apt'
 
 group = 'com.solera.defrag'
-version = '0.8.0'
+version = '0.8.1'
 
 android {
   compileSdkVersion 23
@@ -39,8 +39,8 @@ def siteUrl = 'https://github.com/R3PI/Defrag'
 def gitUrl = 'https://github.com/R3PI/Defrag.git'
 
 bintray {
-  user = bintray_user
-  key = bintray_api_key
+  user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
+  key = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY')
 
   configurations = ['archives'] //When uploading configuration files
   pkg {
