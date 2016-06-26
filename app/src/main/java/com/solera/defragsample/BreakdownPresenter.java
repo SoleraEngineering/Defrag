@@ -16,9 +16,12 @@
 package com.solera.defragsample;
 
 import android.support.annotation.NonNull;
-import auto.parcel.AutoParcel;
+
 import com.solera.defrag.ViewStack;
+
 import java.io.Serializable;
+
+import auto.parcel.AutoParcel;
 
 public class BreakdownPresenter extends Presenter<BreakdownPresenter.View> {
   public static void push(@NonNull ViewStack viewStack, int totalCost, int totalPeople) {
@@ -28,7 +31,7 @@ public class BreakdownPresenter extends Presenter<BreakdownPresenter.View> {
   @Override protected void onTakeView() {
     super.onTakeView();
 
-    final Parameters parameters = ViewStack.get(getContext()).getParameters(getView());
+    final Parameters parameters = ViewStack.get(getContext()).getParameter(getView());
     if (parameters == null) {
       throw new IllegalStateException("Parameters is null");
     }

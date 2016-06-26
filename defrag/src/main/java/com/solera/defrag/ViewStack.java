@@ -34,7 +34,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
-import auto.parcel.AutoParcel;
+
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
@@ -44,16 +44,19 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 
+import auto.parcel.AutoParcel;
+
 /**
  * Handles a stack of views, and animations between these views.
  */
 @MainThread
 public class ViewStack {
   //Explicitly create a new string - as we use this reference as a token
-  public static final Serializable USE_EXISTING_SAVED_STATE = new String("");
+  public static final Bundle USE_EXISTING_SAVED_STATE = new Bundle();
   private static final String SAVE_STATE_NAME = ViewStack.class.getCanonicalName();
   private static final String SERVICE_NAME = "view_stack";
   private static final int DEFAULT_ANIMATION_DURATION_IN_MS = 300;
+  private static final String SINGLE_PARAMETER_KEY = "view_stack_single_param";
   private final FrameLayout mFrameLayout;
   private final Collection<ViewStackListener> mViewStackListeners = new ArrayList<>();
   private Deque<ViewStackEntry> mViewStack = new ArrayDeque<>();
@@ -74,14 +77,17 @@ public class ViewStack {
     }
   }
 
+  @Deprecated
   public static boolean matchesServiceName(String serviceName) {
     return SERVICE_NAME.equals(serviceName);
   }
 
+  @Deprecated
   public static ViewStack get(@NonNull View view) {
     return ViewStack.get(view.getContext());
   }
 
+  @Deprecated
   @SuppressLint("WrongConstant") public static ViewStack get(@NonNull Context context) {
     //noinspection ResourceType
     return (ViewStack) context.getSystemService(SERVICE_NAME);
@@ -237,7 +243,7 @@ public class ViewStack {
     replace(layout, null);
   }
 
-  public void replace(@LayoutRes int layout, @Nullable Serializable parameters) {
+  public void replace(@LayoutRes int layout, @Nullable Bundle parameters) {
     setTraversingState(TraversingState.REPLACING);
     final ViewStackEntry viewStackEntry = new ViewStackEntry(layout, parameters);
     final View view = viewStackEntry.getView();
@@ -261,34 +267,78 @@ public class ViewStack {
     return mViewStack.size();
   }
 
+
   /**
    * Starts the viewstack with the given layout, if the viewstack is non-empty, this operation is
    * ignored.
    *
    * @param layout the layout to start with
    */
+  public void pushIfEmpty(@LayoutRes int layout) {
+    pushIfEmpty(layout, null);
+  }
+
+  /**
+   * Starts the viewstack with the given layout, if the viewstack is non-empty, this operation is
+   * ignored.
+   *
+   * @param layout     the layout to start with
+   * @param parameters the start parameters
+   */
+  public void pushIfEmpty(@LayoutRes int layout, @Nullable Bundle parameters) {
+    if (mViewStack.isEmpty()) {
+      push(layout, parameters);
+    }
+  }
+
+  /**
+   * @param layout the layout to start with
+   * @deprecated use {@link #pushIfEmpty(int)} instead.
+   * Starts the viewstack with the given layout, if the viewstack is non-empty, this operation is
+   * ignored.
+   */
+  @Deprecated
   public void startWith(@LayoutRes int layout) {
     startWith(layout, null);
   }
 
   /**
+   * @deprecated use {@link #pushIfEmpty(int, Bundle)} instead.
    * Starts the viewstack with the given layout, if the viewstack is non-empty, this operation is
    * ignored.
    *
    * @param layout the layout to start with
    * @param parameters the start parameters
    */
-  public void startWith(@LayoutRes int layout, @Nullable Serializable parameters) {
+  @Deprecated
+  public void startWith(@LayoutRes int layout, @Nullable Bundle parameters) {
     if (mViewStack.isEmpty()) {
-      checkNotEmptyAndPush(layout, parameters, false);
+      push(layout,parameters);
     }
   }
 
-  private void checkNotEmptyAndPush(@LayoutRes int layout, @Nullable Serializable parameters,
-      boolean throwIfEmpty) {
-    if (throwIfEmpty && mViewStack.isEmpty()) {
-      throw new IllegalStateException("push called on empty stack. Use startWith");
+  public void push(@LayoutRes int layout) {
+    push(layout, (Bundle) null);
+  }
+
+  public void push(@LayoutRes int layout, @Nullable Serializable parameter) {
+    push(layout, createSimpleBundle(parameter));
+  }
+
+  @Nullable
+  private Bundle createSimpleBundle(@Nullable Serializable parameter) {
+    final Bundle parameterBundle;
+    if (parameter == null) {
+      parameterBundle = null;
+    } else {
+      parameterBundle = new Bundle(1);
+      parameterBundle.putSerializable(SINGLE_PARAMETER_KEY, parameter);
     }
+
+    return parameterBundle;
+  }
+
+  public void push(@LayoutRes int layout, @Nullable Bundle parameters) {
     final ViewStackEntry viewStackEntry = new ViewStackEntry(layout, parameters);
     final View view = viewStackEntry.getView();
 
@@ -314,20 +364,12 @@ public class ViewStack {
     });
   }
 
-  public void push(@LayoutRes int layout) {
-    push(layout, null);
-  }
-
-  public void push(@LayoutRes int layout, @Nullable Serializable parameters) {
-    checkNotEmptyAndPush(layout, parameters, true);
-  }
-
   /**
    * Replace the current stack with the given views, if the Serializable component
    * is the USE_EXISTING_SAVED_STATE tag, then we will use that saved state for that
    * view (if it exists, and is at the right location in the stack) otherwise this will be null.
    */
-  public void replaceStack(@NonNull List<Pair<Integer, Serializable>> views) {
+  public void replaceStack(@NonNull List<Pair<Integer, Bundle>> views) {
     if (mViewStack.isEmpty()) {
       throw new IllegalStateException("replaceStack called on empty stack. Use startWith");
     }
@@ -342,8 +384,8 @@ public class ViewStack {
     mViewStack.push(fromEntry);
 
     Iterator<ViewStackEntry> iterator = copy.iterator();
-    for (Pair<Integer, Serializable> view : views) {
-      Serializable savedParameter = view.second;
+    for (Pair<Integer, Bundle> view : views) {
+      Bundle savedParameter = view.second;
       if (view.second == USE_EXISTING_SAVED_STATE) {
         savedParameter = null;
         if (iterator != null && iterator.hasNext()) {
@@ -395,21 +437,37 @@ public class ViewStack {
     return result;
   }
 
+
+  @Nullable
+  public <T extends Serializable> T getParameter(@NonNull Object view) {
+    final Bundle parameters = getParameters(view);
+    if (parameters == null) {
+      return null;
+    } else {
+      return (T) parameters.getSerializable(SINGLE_PARAMETER_KEY);
+    }
+  }
+
+  public void setParameter(@NonNull Object view, @Nullable Serializable parameter) {
+    setParameters(view, createSimpleBundle(parameter));
+  }
+
   /**
    * @return the start parameters of the view/presenter
    */
-  @Nullable public <T extends Serializable> T getParameters(@NonNull Object view) {
+  @Nullable
+  public Bundle getParameters(@NonNull Object view) {
     final Iterator<ViewStackEntry> viewStackEntryIterator = mViewStack.descendingIterator();
     while (viewStackEntryIterator.hasNext()) {
       final ViewStackEntry viewStackEntry = viewStackEntryIterator.next();
       if (view == viewStackEntry.mViewReference.get()) {
-        return (T) viewStackEntry.mParameters;
+        return viewStackEntry.mParameters;
       }
     }
     return null;
   }
 
-  public void setParameters(@NonNull Object view, @Nullable Serializable parameters) {
+  public void setParameters(@NonNull Object view, @Nullable Bundle parameters) {
     final Iterator<ViewStackEntry> viewStackEntryIterator = mViewStack.descendingIterator();
     while (viewStackEntryIterator.hasNext()) {
       final ViewStackEntry viewStackEntry = viewStackEntryIterator.next();
@@ -472,26 +530,28 @@ public class ViewStack {
   }
 
   @AutoParcel static abstract class SaveStateEntry implements Parcelable {
-    static SaveStateEntry newInstance(int layout, @Nullable Serializable parameters) {
+    static SaveStateEntry newInstance(int layout, @Nullable Bundle parameters) {
       return new AutoParcel_ViewStack_SaveStateEntry(layout, parameters);
     }
 
     @LayoutRes abstract int layout();
 
-    @Nullable abstract Serializable parameters();
+    @Nullable
+    abstract Bundle parameters();
   }
 
   private class ViewStackEntry {
     @LayoutRes private final int mLayout;
-    @Nullable private Serializable mParameters;
+    @Nullable
+    private Bundle mParameters;
     private WeakReference<View> mViewReference = new WeakReference<>(null);
 
-    ViewStackEntry(@LayoutRes int layout, @Nullable Serializable parameters) {
+    ViewStackEntry(@LayoutRes int layout, @Nullable Bundle parameters) {
       mLayout = layout;
       mParameters = parameters;
     }
 
-    void setParameters(@Nullable Serializable parameters) {
+    void setParameters(@Nullable Bundle parameters) {
       mParameters = parameters;
     }
 

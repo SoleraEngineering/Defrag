@@ -16,7 +16,9 @@
 package com.solera.defragsample;
 
 import android.support.annotation.NonNull;
+
 import com.solera.defrag.ViewStack;
+
 import rx.Observable;
 import rx.Subscription;
 import rx.functions.Action1;
@@ -30,7 +32,7 @@ public class TotalPeoplePresenter extends Presenter<TotalPeoplePresenter.View> {
   @Override protected void onTakeView() {
     super.onTakeView();
 
-    final Integer totalCost = ViewStack.get(getContext()).getParameters(getView());
+    final Integer totalCost = ViewStack.get(getContext()).getParameter(getView());
     if (totalCost == null) {
       throw new IllegalStateException("Parameter is null");
     }
