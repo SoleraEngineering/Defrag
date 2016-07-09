@@ -4,7 +4,8 @@ apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'android-apt'
 
 group = 'com.solera.defrag'
-version = '0.8.0'
+version = '0.8.1'
+
 
 android {
   compileSdkVersion 23
@@ -38,17 +39,21 @@ dependencies {
 def siteUrl = 'https://github.com/R3PI/Defrag'
 def gitUrl = 'https://github.com/R3PI/Defrag.git'
 
+
 bintray {
-  user = bintray_user
-  key = bintray_api_key
+  //Initialise bintray user/api_key from local.properties file
+  Properties properties = new Properties()
+  properties.load(project.rootProject.file('local.properties').newDataInputStream())
+  user = properties.getProperty('bintray.user')
+  key = properties.getProperty('bintray.apikey')
 
   configurations = ['archives'] //When uploading configuration files
   pkg {
     repo = 'Maven'
     name = 'Defrag'
-    desc = 'Defrag desc'
+    desc = 'Defrag is a simple to use library that allows for Fragment-free Android applications'
     websiteUrl = siteUrl
-    issueTrackerUrl = 'https://github.com/bintray/bintray-examples/issues'
+    issueTrackerUrl = 'https://github.com/R3PI/Defrag/issues'
     vcsUrl = gitUrl
     licenses = ['Apache-2.0']
     labels = ['aar', 'android']
