@@ -9,7 +9,7 @@ Defrag is available in the jCenter repository:
 
 ```java
 dependencies {
-  compile 'com.solera.defrag:defrag:0.8.0'
+  compile 'com.solera.defrag:defrag:0.8.1'
 }
 ```
 
