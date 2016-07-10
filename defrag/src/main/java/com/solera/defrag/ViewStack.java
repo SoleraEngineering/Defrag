@@ -77,16 +77,25 @@ public class ViewStack {
 		}
 	}
 
+	/**
+	 * @deprecated Use a DI library or have an interface for your containing Activity to return your ViewStack
+	 */
 	@Deprecated
 	public static boolean matchesServiceName(String serviceName) {
 		return SERVICE_NAME.equals(serviceName);
 	}
 
+	/**
+	 * @deprecated Use a DI library or have an interface for your containing Activity to return your ViewStack
+	 */
 	@Deprecated
 	public static ViewStack get(@NonNull View view) {
 		return ViewStack.get(view.getContext());
 	}
 
+	/**
+	 * @deprecated Use a DI library or have an interface for your containing Activity to return your ViewStack
+	 */
 	@Deprecated
 	@SuppressLint("WrongConstant")
 	public static ViewStack get(@NonNull Context context) {
@@ -201,6 +210,10 @@ public class ViewStack {
 	}
 
 
+	/**
+	 * @deprecated
+	 * Replaced by {@link #replaceWithSerializableParameter(int, Serializable)}
+	 */
 	@Deprecated
 	public void replace(@LayoutRes int layout, @Nullable Serializable parameter) {
 		replaceWithParameters(layout, createSimpleBundle(parameter));
@@ -260,9 +273,10 @@ public class ViewStack {
 
 	/**
 	 * @param layout the layout to start with
-	 * @deprecated use {@link #pushIfEmpty(int)} instead.
 	 * Starts the viewstack with the given layout, if the viewstack is non-empty, this operation is
 	 * ignored.
+	 * @deprecated
+	 * Use {@link #pushIfEmpty(int)}.
 	 */
 	@Deprecated
 	public void startWith(@LayoutRes int layout) {
@@ -272,9 +286,10 @@ public class ViewStack {
 	/**
 	 * @param layout     the layout to start with
 	 * @param parameters the start parameters
-	 * @deprecated use {@link #pushIfEmpty(int, Bundle)} instead.
 	 * Starts the viewstack with the given layout, if the viewstack is non-empty, this operation is
 	 * ignored.
+	 * @deprecated
+	 * Use {@link #pushIfEmpty(int, Bundle)}
 	 */
 	@Deprecated
 	public void startWith(@LayoutRes int layout, @Nullable Bundle parameters) {
@@ -287,7 +302,13 @@ public class ViewStack {
 		pushWithParameters(layout, null);
 	}
 
-
+	/**
+	 *
+	 * @param layout the layout file to push.
+	 * @param parameter the parameters of the layout file.
+	 * @deprecated
+	 * Use {@link #pushWithSerializableParameter(int, Serializable)}
+	 */
 	@Deprecated
 	public void push(@LayoutRes int layout, @Nullable Serializable parameter) {
 		pushWithParameters(layout, createSimpleBundle(parameter));
@@ -401,6 +422,12 @@ public class ViewStack {
 		return result;
 	}
 
+	/**
+	 * @param view the view to retrieve the parameters for.
+	 * @return the parameters, or null if none found.
+	 * @deprecated
+	 * Use {@link #getSerializableParameter(Object)}
+	 */
 	@Deprecated
 	@Nullable
 	public <T extends Serializable> T getParameter(@NonNull Object view) {
@@ -417,6 +444,13 @@ public class ViewStack {
 		}
 	}
 
+	/**
+	 *
+	 * @param view the view to set the parameter for.
+	 * @param parameter the parameter to set.
+	 * @deprecated
+	 * Use {@link #setSerializableParameter(Object, Serializable)}
+	 */
 	@Deprecated
 	public void setParameter(@NonNull Object view, @Nullable Serializable parameter) {
 		setSerializableParameter(view, parameter);
