@@ -19,14 +19,17 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MotionEvent;
-import android.widget.FrameLayout;
 
 import com.solera.defrag.TraversingState;
 import com.solera.defrag.ViewStack;
 import com.solera.defrag.ViewStackListener;
 
+import butterknife.Bind;
+import butterknife.ButterKnife;
+
 public class MainActivity extends AppCompatActivity {
-	private ViewStack mViewStack;
+	@Bind(R.id.viewstack)
+	ViewStack mViewStack;
 	private boolean mDisableUI = false;
 
 	@Override
@@ -57,8 +60,7 @@ public class MainActivity extends AppCompatActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		final FrameLayout mainLayout = (FrameLayout) findViewById(android.R.id.content);
-		mViewStack = new ViewStack(mainLayout, savedInstanceState);
+		ButterKnife.bind(this);
 
 		mViewStack.addTraversingListener(new ViewStackListener() {
 			@Override
@@ -67,25 +69,8 @@ public class MainActivity extends AppCompatActivity {
 			}
 		});
 
-
-		mViewStack.pushIfEmpty(R.layout.totalcost);
-	}
-
-	@Override
-	protected void onStop() {
-		super.onStop();
-		mViewStack.onStop();
-	}
-
-	@Override
-	protected void onSaveInstanceState(Bundle outState) {
-		super.onSaveInstanceState(outState);
-		mViewStack.onSaveInstanceState(outState);
-	}
-
-	@Override
-	protected void onStart() {
-		super.onStart();
-		mViewStack.onStart();
+		if (savedInstanceState == null) {
+			mViewStack.push(R.layout.totalcost);
+		}
 	}
 }

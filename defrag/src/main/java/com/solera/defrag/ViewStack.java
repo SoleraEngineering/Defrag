@@ -29,9 +29,9 @@ import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.util.Pair;
+import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
 
@@ -50,31 +50,27 @@ import auto.parcel.AutoParcel;
  * Handles a stack of views, and animations between these views.
  */
 @MainThread
-public class ViewStack {
+public class ViewStack extends FrameLayout {
 	//Explicitly create a new string - as we use this reference as a token
 	public static final Bundle USE_EXISTING_SAVED_STATE = new Bundle();
-	private static final String SAVE_STATE_NAME = ViewStack.class.getCanonicalName();
 	private static final String SERVICE_NAME = "view_stack";
 	private static final int DEFAULT_ANIMATION_DURATION_IN_MS = 300;
 	private static final String SINGLE_PARAMETER_KEY = "view_stack_single_param";
-	private final FrameLayout mFrameLayout;
 	private final Collection<ViewStackListener> mViewStackListeners = new ArrayList<>();
 	private Deque<ViewStackEntry> mViewStack = new ArrayDeque<>();
 	private TraversingState mTraversingState = TraversingState.IDLE;
 	private Object mResult;
 
-	public ViewStack(@NonNull FrameLayout frameLayout, @Nullable Bundle saveState) {
-		mFrameLayout = frameLayout;
-		final SaveState parcelable =
-				saveState == null ? null : (SaveState) saveState.getParcelable(SERVICE_NAME);
-		if (parcelable != null) {
-			for (SaveStateEntry entry : parcelable.stack()) {
-				mViewStack.add(new ViewStackEntry(entry.layout(), entry.parameters()));
-			}
-			if (!mViewStack.isEmpty()) {
-				mFrameLayout.addView(mViewStack.peek().getView());
-			}
-		}
+	public ViewStack(Context context) {
+		super(context);
+	}
+
+	public ViewStack(Context context, AttributeSet attrs) {
+		super(context, attrs);
+	}
+
+	public ViewStack(Context context, AttributeSet attrs, int defStyleAttr) {
+		super(context, attrs, defStyleAttr);
 	}
 
 	/**
@@ -101,30 +97,6 @@ public class ViewStack {
 	public static ViewStack get(@NonNull Context context) {
 		//noinspection ResourceType
 		return (ViewStack) context.getSystemService(SERVICE_NAME);
-	}
-
-	public void onSaveInstanceState(@NonNull Bundle outState) {
-		outState.putParcelable(SAVE_STATE_NAME, SaveState.newInstance(this));
-	}
-
-	/**
-	 * It should be called in the {@link Activity#onStart()} in order to handle the {@link Activity}
-	 * lifecycle gracefully.
-	 */
-	public void onStart() {
-		if (mFrameLayout.getChildCount() == 0 && !mViewStack.isEmpty()) {
-			mFrameLayout.addView(mViewStack.peek().getView());
-		}
-	}
-
-	/**
-	 * It should be called in the {@link Activity#onStop()} in order to handle the {@link Activity}
-	 * lifecycle gracefully.
-	 */
-	public void onStop() {
-		if (!mViewStack.isEmpty()) {
-			mFrameLayout.removeView(mViewStack.peek().getView());
-		}
 	}
 
 	/**
@@ -166,11 +138,11 @@ public class ViewStack {
 			mViewStack.pop();
 		}
 		final View toView = mViewStack.peek().getView();
-		mFrameLayout.addView(toView);
+		addView(toView);
 		ViewUtils.waitForMeasure(toView, new ViewUtils.OnMeasuredCallback() {
 			@Override
 			public void onMeasured(View view, int width, int height) {
-				ViewStack.this.runAnimation(mFrameLayout, fromView, toView, Direction.BACK);
+				ViewStack.this.runAnimation(fromView, toView, Direction.BACK);
 			}
 		});
 		return true;
@@ -209,10 +181,8 @@ public class ViewStack {
 		replaceWithParameters(layout, null);
 	}
 
-
 	/**
-	 * @deprecated
-	 * Replaced by {@link #replaceWithSerializableParameter(int, Serializable)}
+	 * @deprecated Replaced by {@link #replaceWithSerializableParameter(int, Serializable)}
 	 */
 	@Deprecated
 	public void replace(@LayoutRes int layout, @Nullable Serializable parameter) {
@@ -234,11 +204,11 @@ public class ViewStack {
 		final ViewStackEntry topEntry = mViewStack.peek();
 		final View fromView = topEntry.getView();
 		mViewStack.push(viewStackEntry);
-		mFrameLayout.addView(view);
+		addView(view);
 		ViewUtils.waitForMeasure(view, new ViewUtils.OnMeasuredCallback() {
 			@Override
 			public void onMeasured(View view, int width, int height) {
-				ViewStack.this.runAnimation(mFrameLayout, fromView, view, Direction.FORWARD);
+				ViewStack.this.runAnimation(fromView, view, Direction.FORWARD);
 				mViewStack.remove(topEntry);
 			}
 		});
@@ -248,66 +218,14 @@ public class ViewStack {
 		return mViewStack.size();
 	}
 
-	/**
-	 * Starts the viewstack with the given layout, if the viewstack is non-empty, this operation is
-	 * ignored.
-	 *
-	 * @param layout the layout to start with
-	 */
-	public void pushIfEmpty(@LayoutRes int layout) {
-		pushIfEmpty(layout, null);
-	}
-
-	/**
-	 * Starts the viewstack with the given layout, if the viewstack is non-empty, this operation is
-	 * ignored.
-	 *
-	 * @param layout     the layout to start with
-	 * @param parameters the start parameters
-	 */
-	public void pushIfEmpty(@LayoutRes int layout, @Nullable Bundle parameters) {
-		if (mViewStack.isEmpty()) {
-			pushWithParameters(layout, parameters);
-		}
-	}
-
-	/**
-	 * @param layout the layout to start with
-	 * Starts the viewstack with the given layout, if the viewstack is non-empty, this operation is
-	 * ignored.
-	 * @deprecated
-	 * Use {@link #pushIfEmpty(int)}.
-	 */
-	@Deprecated
-	public void startWith(@LayoutRes int layout) {
-		startWith(layout, null);
-	}
-
-	/**
-	 * @param layout     the layout to start with
-	 * @param parameters the start parameters
-	 * Starts the viewstack with the given layout, if the viewstack is non-empty, this operation is
-	 * ignored.
-	 * @deprecated
-	 * Use {@link #pushIfEmpty(int, Bundle)}
-	 */
-	@Deprecated
-	public void startWith(@LayoutRes int layout, @Nullable Bundle parameters) {
-		if (mViewStack.isEmpty()) {
-			pushWithParameters(layout, parameters);
-		}
-	}
-
 	public void push(@LayoutRes int layout) {
 		pushWithParameters(layout, null);
 	}
 
 	/**
-	 *
-	 * @param layout the layout file to push.
+	 * @param layout    the layout file to push.
 	 * @param parameter the parameters of the layout file.
-	 * @deprecated
-	 * Use {@link #pushWithSerializableParameter(int, Serializable)}
+	 * @deprecated Use {@link #pushWithSerializableParameter(int, Serializable)}
 	 */
 	@Deprecated
 	public void push(@LayoutRes int layout, @Nullable Serializable parameter) {
@@ -325,7 +243,7 @@ public class ViewStack {
 		setTraversingState(TraversingState.PUSHING);
 		if (mViewStack.isEmpty()) {
 			mViewStack.push(viewStackEntry);
-			mFrameLayout.addView(view);
+			addView(view);
 			ViewUtils.waitForMeasure(view, new ViewUtils.OnMeasuredCallback() {
 				@Override
 				public void onMeasured(View view, int width, int height) {
@@ -336,12 +254,12 @@ public class ViewStack {
 		}
 		final View fromView = mViewStack.peek().getView();
 		mViewStack.push(viewStackEntry);
-		mFrameLayout.addView(view);
+		addView(view);
 
 		ViewUtils.waitForMeasure(view, new ViewUtils.OnMeasuredCallback() {
 			@Override
 			public void onMeasured(View view, int width, int height) {
-				ViewStack.this.runAnimation(mFrameLayout, fromView, view, Direction.FORWARD);
+				ViewStack.this.runAnimation(fromView, view, Direction.FORWARD);
 			}
 		});
 	}
@@ -390,8 +308,8 @@ public class ViewStack {
 			//if current topEntry layout is equal to the next proposed topEntry layout
 			//we cannot do a transition animation
 			mViewStack.remove(fromEntry);
-			mFrameLayout.removeAllViews();
-			mFrameLayout.addView(toView);
+			removeAllViews();
+			addView(toView);
 			ViewUtils.waitForMeasure(toView, new ViewUtils.OnMeasuredCallback() {
 				@Override
 				public void onMeasured(View view, int width, int height) {
@@ -400,12 +318,12 @@ public class ViewStack {
 			});
 		} else {
 			final View fromView = fromEntry.getView();
-			mFrameLayout.addView(toView);
+			addView(toView);
 
 			ViewUtils.waitForMeasure(toView, new ViewUtils.OnMeasuredCallback() {
 				@Override
 				public void onMeasured(View view, int width, int height) {
-					ViewStack.this.runAnimation(mFrameLayout, fromView, toView, Direction.FORWARD);
+					ViewStack.this.runAnimation(fromView, toView, Direction.FORWARD);
 					mViewStack.remove(fromEntry);
 				}
 			});
@@ -425,8 +343,7 @@ public class ViewStack {
 	/**
 	 * @param view the view to retrieve the parameters for.
 	 * @return the parameters, or null if none found.
-	 * @deprecated
-	 * Use {@link #getSerializableParameter(Object)}
+	 * @deprecated Use {@link #getSerializableParameter(Object)}
 	 */
 	@Deprecated
 	@Nullable
@@ -445,11 +362,9 @@ public class ViewStack {
 	}
 
 	/**
-	 *
-	 * @param view the view to set the parameter for.
+	 * @param view      the view to set the parameter for.
 	 * @param parameter the parameter to set.
-	 * @deprecated
-	 * Use {@link #setSerializableParameter(Object, Serializable)}
+	 * @deprecated Use {@link #setSerializableParameter(Object, Serializable)}
 	 */
 	@Deprecated
 	public void setParameter(@NonNull Object view, @Nullable Serializable parameter) {
@@ -520,13 +435,31 @@ public class ViewStack {
 		return popWithResult(count, null);
 	}
 
-	private void runAnimation(final ViewGroup container, final View from, final View to,
+	@Override
+	protected Parcelable onSaveInstanceState() {
+		final Parcelable parcelable = super.onSaveInstanceState();
+		return SaveState.newInstance(this, parcelable);
+	}
+
+	@Override
+	protected void onRestoreInstanceState(Parcelable state) {
+		final SaveState parcelable = (SaveState) state;
+		for (SaveStateEntry entry : parcelable.stack()) {
+			mViewStack.add(new ViewStackEntry(entry.layout(), entry.parameters()));
+		}
+		if (!mViewStack.isEmpty()) {
+			addView(mViewStack.peek().getView());
+		}
+		super.onRestoreInstanceState(parcelable.superState());
+	}
+
+	private void runAnimation(final View from, final View to,
 							  Direction direction) {
 		Animator animator = createAnimation(from, to, direction);
 		animator.addListener(new AnimatorListenerAdapter() {
 			@Override
 			public void onAnimationEnd(Animator animation) {
-				container.removeView(from);
+				removeView(from);
 				setTraversingState(TraversingState.IDLE);
 			}
 		});
@@ -594,16 +527,19 @@ public class ViewStack {
 
 	@AutoParcel
 	static abstract class SaveState implements Parcelable {
-		static SaveState newInstance(@NonNull ViewStack viewstack) {
+		static SaveState newInstance(@NonNull ViewStack viewstack, @NonNull Parcelable superState) {
 			List<SaveStateEntry> stack = new ArrayList<>(viewstack.getViewCount());
 			for (ViewStackEntry entry : viewstack.mViewStack) {
 				stack.add(SaveStateEntry.newInstance(entry.mLayout, entry.mParameters));
 			}
-			return new AutoParcel_ViewStack_SaveState(stack);
+			return new AutoParcel_ViewStack_SaveState(stack, superState);
 		}
 
 		@NonNull
 		abstract List<SaveStateEntry> stack();
+
+		@NonNull
+		abstract Parcelable superState();
 	}
 
 	@AutoParcel
@@ -638,7 +574,7 @@ public class ViewStack {
 		private View getView() {
 			View view = mViewReference.get();
 			if (view == null) {
-				view = LayoutInflater.from(mFrameLayout.getContext()).inflate(mLayout, mFrameLayout, false);
+				view = LayoutInflater.from(getContext()).inflate(mLayout, ViewStack.this, false);
 				mViewReference = new WeakReference<>(view);
 			}
 			return view;
