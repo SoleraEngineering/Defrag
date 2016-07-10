@@ -15,43 +15,42 @@
  */
 package com.solera.defragsample;
 
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 
 import com.solera.defrag.ViewStack;
 
-import java.io.Serializable;
-
-import auto.parcel.AutoParcel;
-
 public class BreakdownPresenter extends Presenter<BreakdownPresenter.View> {
-  public static void push(@NonNull ViewStack viewStack, int totalCost, int totalPeople) {
-    viewStack.push(R.layout.breakdown, Parameters.newInstance(totalCost, totalPeople));
-  }
+	private static final String TOTAL_COST = "totalCost";
+	private static final String TOTAL_PEOPLE = "totalPeople";
 
-  @Override protected void onTakeView() {
-    super.onTakeView();
+	interface View extends PresenterView {
+		void setUi(@NonNull String totalCost, @NonNull String totalPeople, @NonNull String perPerson);
+	}
 
-    final Parameters parameters = ViewStack.get(getContext()).getParameter(getView());
-    if (parameters == null) {
-      throw new IllegalStateException("Parameters is null");
-    }
+	public static void push(@NonNull ViewStack viewStack, int totalCost, int totalPeople) {
+		final Bundle parameters = new Bundle();
+		parameters.putInt(TOTAL_COST, totalCost);
+		parameters.putInt(TOTAL_PEOPLE, totalPeople);
+		viewStack.pushWithParameters(R.layout.breakdown, parameters);
+	}
 
-    getView().setUi(Integer.toString(parameters.totalCost()),
-        Integer.toString(parameters.totalPeople()),
-        Integer.toString(parameters.totalCost() / parameters.totalPeople()));
-  }
+	@Override
+	protected void onTakeView() {
+		super.onTakeView();
 
-  public interface View extends PresenterView {
-    void setUi(@NonNull String totalCost, @NonNull String totalPeople, @NonNull String perPerson);
-  }
+		final ViewStack viewStack = ViewStackHelper.getViewStack(getContext());
+		final Bundle parameters = viewStack.getParameters(getView());
+		if (parameters == null) {
+			throw new IllegalStateException("Parameters is null");
+		}
 
-  @AutoParcel static abstract class Parameters implements Serializable {
-    static Parameters newInstance(int totalCost, int totalPeople) {
-      return new AutoParcel_BreakdownPresenter_Parameters(totalCost, totalPeople);
-    }
+		final int totalCost = parameters.getInt(TOTAL_COST);
+		final int totalPeople = parameters.getInt(TOTAL_PEOPLE);
+		final int result = totalCost / totalPeople;
 
-    abstract int totalCost();
-
-    abstract int totalPeople();
-  }
+		getView().setUi(Integer.toString(totalCost),
+				Integer.toString(totalPeople),
+				Integer.toString(result));
+	}
 }

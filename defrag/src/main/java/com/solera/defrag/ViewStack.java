@@ -200,7 +200,13 @@ public class ViewStack {
 		replaceWithParameters(layout, null);
 	}
 
+
+	@Deprecated
 	public void replace(@LayoutRes int layout, @Nullable Serializable parameter) {
+		replaceWithParameters(layout, createSimpleBundle(parameter));
+	}
+
+	public void replaceWithSerializableParameter(@LayoutRes int layout, @Nullable Serializable parameter) {
 		replaceWithParameters(layout, createSimpleBundle(parameter));
 	}
 
@@ -273,16 +279,22 @@ public class ViewStack {
 	@Deprecated
 	public void startWith(@LayoutRes int layout, @Nullable Bundle parameters) {
 		if (mViewStack.isEmpty()) {
-			push(layout, parameters);
+			pushWithParameters(layout, parameters);
 		}
 	}
 
 	public void push(@LayoutRes int layout) {
-		push(layout, (Bundle) null);
+		pushWithParameters(layout, null);
 	}
 
+
+	@Deprecated
 	public void push(@LayoutRes int layout, @Nullable Serializable parameter) {
-		push(layout, createSimpleBundle(parameter));
+		pushWithParameters(layout, createSimpleBundle(parameter));
+	}
+
+	public void pushWithSerializableParameter(@LayoutRes int layout, @Nullable Serializable parameter) {
+		pushWithParameters(layout, createSimpleBundle(parameter));
 	}
 
 	public void pushWithParameters(@LayoutRes int layout, @Nullable Bundle parameters) {
@@ -389,8 +401,14 @@ public class ViewStack {
 		return result;
 	}
 
+	@Deprecated
 	@Nullable
 	public <T extends Serializable> T getParameter(@NonNull Object view) {
+		return getSerializableParameter(view);
+	}
+
+	@Nullable
+	public <T extends Serializable> T getSerializableParameter(@NonNull Object view) {
 		final Bundle parameters = getParameters(view);
 		if (parameters == null) {
 			return null;
@@ -399,7 +417,12 @@ public class ViewStack {
 		}
 	}
 
+	@Deprecated
 	public void setParameter(@NonNull Object view, @Nullable Serializable parameter) {
+		setSerializableParameter(view, parameter);
+	}
+
+	public void setSerializableParameter(@NonNull Object view, @Nullable Serializable parameter) {
 		setParameters(view, createSimpleBundle(parameter));
 	}
 
