@@ -51,521 +51,540 @@ import auto.parcel.AutoParcel;
  */
 @MainThread
 public class ViewStack {
-  //Explicitly create a new string - as we use this reference as a token
-  public static final Bundle USE_EXISTING_SAVED_STATE = new Bundle();
-  private static final String SAVE_STATE_NAME = ViewStack.class.getCanonicalName();
-  private static final String SERVICE_NAME = "view_stack";
-  private static final int DEFAULT_ANIMATION_DURATION_IN_MS = 300;
-  private static final String SINGLE_PARAMETER_KEY = "view_stack_single_param";
-  private final FrameLayout mFrameLayout;
-  private final Collection<ViewStackListener> mViewStackListeners = new ArrayList<>();
-  private Deque<ViewStackEntry> mViewStack = new ArrayDeque<>();
-  private TraversingState mTraversingState = TraversingState.IDLE;
-  private Object mResult;
-
-  public ViewStack(@NonNull FrameLayout frameLayout, @Nullable Bundle saveState) {
-    mFrameLayout = frameLayout;
-    final SaveState parcelable =
-        saveState == null ? null : (SaveState) saveState.getParcelable(SERVICE_NAME);
-    if (parcelable != null) {
-      for (SaveStateEntry entry : parcelable.stack()) {
-        mViewStack.add(new ViewStackEntry(entry.layout(), entry.parameters()));
-      }
-      if (!mViewStack.isEmpty()) {
-        mFrameLayout.addView(mViewStack.peek().getView());
-      }
-    }
-  }
-
-  @Deprecated
-  public static boolean matchesServiceName(String serviceName) {
-    return SERVICE_NAME.equals(serviceName);
-  }
-
-  @Deprecated
-  public static ViewStack get(@NonNull View view) {
-    return ViewStack.get(view.getContext());
-  }
-
-  @Deprecated
-  @SuppressLint("WrongConstant") public static ViewStack get(@NonNull Context context) {
-    //noinspection ResourceType
-    return (ViewStack) context.getSystemService(SERVICE_NAME);
-  }
-
-  public void onSaveInstanceState(@NonNull Bundle outState) {
-    outState.putParcelable(SAVE_STATE_NAME, SaveState.newInstance(this));
-  }
-
-  /**
-   * It should be called in the {@link Activity#onStart()} in order to handle the {@link Activity}
-   * lifecycle gracefully.
-   */
-  public void onStart() {
-    if (mFrameLayout.getChildCount() == 0 && !mViewStack.isEmpty()) {
-      mFrameLayout.addView(mViewStack.peek().getView());
-    }
-  }
-
-  /**
-   * It should be called in the {@link Activity#onStop()} in order to handle the {@link Activity}
-   * lifecycle gracefully.
-   */
-  public void onStop() {
-    if (!mViewStack.isEmpty()) {
-      mFrameLayout.removeView(mViewStack.peek().getView());
-    }
-  }
-
-  /**
-   * It should be called in the {@link Activity#onBackPressed()} in order to handle the backpress
-   * events correctly.
-   *
-   * @return true if the back press event was handled by the viewstack, false otherwise (and so the
-   * activity should handle this event).
-   */
-  public boolean onBackPressed() {
-    final View topView = getTopView();
-    if (topView != null && topView instanceof HandlesBackPresses) {
-      return ((HandlesBackPresses) topView).onBackPressed();
-    }
-    return pop();
-  }
-
-  @Nullable public View getTopView() {
-    final ViewStackEntry peek = mViewStack.peek();
-    if (peek != null) {
-      return peek.getView();
-    }
-    return null;
-  }
-
-  public boolean pop() {
-    return popWithResult(1, null);
-  }
-
-  public boolean popWithResult(int count, @Nullable Object result) {
-    if (mViewStack.size() <= count) {
-      return false;
-    }
-    mResult = result;
-    setTraversingState(TraversingState.POPPING);
-    final View fromView = mViewStack.pop().getView();
-    while (--count > 0) {
-      mViewStack.pop();
-    }
-    final View toView = mViewStack.peek().getView();
-    mFrameLayout.addView(toView);
-    ViewUtils.waitForMeasure(toView, new ViewUtils.OnMeasuredCallback() {
-      @Override public void onMeasured(View view, int width, int height) {
-        ViewStack.this.runAnimation(mFrameLayout, fromView, toView, Direction.BACK);
-      }
-    });
-    return true;
-  }
-
-  private void runAnimation(final ViewGroup container, final View from, final View to,
-      Direction direction) {
-    Animator animator = createAnimation(from, to, direction);
-    animator.addListener(new AnimatorListenerAdapter() {
-      @Override public void onAnimationEnd(Animator animation) {
-        container.removeView(from);
-        setTraversingState(TraversingState.IDLE);
-      }
-    });
-    animator.start();
-  }
-
-  @NonNull private Animator createAnimation(@NonNull View from, @NonNull View to,
-      @NonNull Direction direction) {
-    Animator animation = null;
-    if (to instanceof HasTraversalAnimation) {
-      animation = ((HasTraversalAnimation) to).createAnimation(from);
-    }
-
-    if (animation == null) {
-      return createDefaultAnimation(from, to, direction);
-    } else {
-      return animation;
-    }
-  }
-
-  private Animator createDefaultAnimation(View from, View to, Direction direction) {
-    boolean backward = direction == Direction.BACK;
-
-    AnimatorSet set = new AnimatorSet();
-
-    set.setInterpolator(new OvershootInterpolator());
-    set.setDuration(DEFAULT_ANIMATION_DURATION_IN_MS);
-
-    set.play(ObjectAnimator.ofFloat(from, View.ALPHA, 0.0f));
-    set.play(ObjectAnimator.ofFloat(to, View.ALPHA, 0.5f, 1.0f));
-
-    if (backward) {
-      set.play(ObjectAnimator.ofFloat(from, View.SCALE_X, 1.1f));
-      set.play(ObjectAnimator.ofFloat(from, View.SCALE_Y, 1.1f));
-      set.play(ObjectAnimator.ofFloat(to, View.SCALE_X, 0.9f, 1.0f));
-      set.play(ObjectAnimator.ofFloat(to, View.SCALE_Y, 0.9f, 1.0f));
-    } else {
-      set.play(ObjectAnimator.ofFloat(from, View.SCALE_X, 0.9f));
-      set.play(ObjectAnimator.ofFloat(from, View.SCALE_Y, 0.9f));
-      set.play(ObjectAnimator.ofFloat(to, View.SCALE_X, 1.1f, 1.0f));
-      set.play(ObjectAnimator.ofFloat(to, View.SCALE_Y, 1.1f, 1.0f));
-    }
-
-    return set;
-  }
-
-  public void addTraversingListener(@NonNull ViewStackListener listener) {
-    mViewStackListeners.add(listener);
-  }
-
-  public void removeTraversingListener(@NonNull ViewStackListener listener) {
-    mViewStackListeners.remove(listener);
-  }
-
-  @NonNull public TraversingState getTraversingState() {
-    return mTraversingState;
-  }
-
-  private void setTraversingState(@NonNull TraversingState traversing) {
-    if (traversing != TraversingState.IDLE && mTraversingState != TraversingState.IDLE) {
-      throw new IllegalStateException("ViewStack is currently traversing");
-    }
-
-    mTraversingState = traversing;
-    for (ViewStackListener listener : mViewStackListeners) {
-      listener.onTraversing(mTraversingState);
-    }
-  }
-
-  @LayoutRes public int getTopLayout() {
-    return mViewStack.peek().mLayout;
-  }
-
-  public void replace(@LayoutRes int layout) {
-    replace(layout, null);
-  }
-
-  public void replace(@LayoutRes int layout, @Nullable Bundle parameters) {
-    setTraversingState(TraversingState.REPLACING);
-    final ViewStackEntry viewStackEntry = new ViewStackEntry(layout, parameters);
-    final View view = viewStackEntry.getView();
-    if (mViewStack.isEmpty()) {
-      throw new IllegalStateException("Replace on an empty stack");
-    }
-
-    final ViewStackEntry topEntry = mViewStack.peek();
-    final View fromView = topEntry.getView();
-    mViewStack.push(viewStackEntry);
-    mFrameLayout.addView(view);
-    ViewUtils.waitForMeasure(view, new ViewUtils.OnMeasuredCallback() {
-      @Override public void onMeasured(View view, int width, int height) {
-        ViewStack.this.runAnimation(mFrameLayout, fromView, view, Direction.FORWARD);
-        mViewStack.remove(topEntry);
-      }
-    });
-  }
-
-  public int getViewCount() {
-    return mViewStack.size();
-  }
-
-
-  /**
-   * Starts the viewstack with the given layout, if the viewstack is non-empty, this operation is
-   * ignored.
-   *
-   * @param layout the layout to start with
-   */
-  public void pushIfEmpty(@LayoutRes int layout) {
-    pushIfEmpty(layout, null);
-  }
-
-  /**
-   * Starts the viewstack with the given layout, if the viewstack is non-empty, this operation is
-   * ignored.
-   *
-   * @param layout     the layout to start with
-   * @param parameters the start parameters
-   */
-  public void pushIfEmpty(@LayoutRes int layout, @Nullable Bundle parameters) {
-    if (mViewStack.isEmpty()) {
-      push(layout, parameters);
-    }
-  }
-
-  /**
-   * @param layout the layout to start with
-   * @deprecated use {@link #pushIfEmpty(int)} instead.
-   * Starts the viewstack with the given layout, if the viewstack is non-empty, this operation is
-   * ignored.
-   */
-  @Deprecated
-  public void startWith(@LayoutRes int layout) {
-    startWith(layout, null);
-  }
-
-  /**
-   * @deprecated use {@link #pushIfEmpty(int, Bundle)} instead.
-   * Starts the viewstack with the given layout, if the viewstack is non-empty, this operation is
-   * ignored.
-   *
-   * @param layout the layout to start with
-   * @param parameters the start parameters
-   */
-  @Deprecated
-  public void startWith(@LayoutRes int layout, @Nullable Bundle parameters) {
-    if (mViewStack.isEmpty()) {
-      push(layout,parameters);
-    }
-  }
-
-  public void push(@LayoutRes int layout) {
-    push(layout, (Bundle) null);
-  }
-
-  public void push(@LayoutRes int layout, @Nullable Serializable parameter) {
-    push(layout, createSimpleBundle(parameter));
-  }
-
-  @Nullable
-  private Bundle createSimpleBundle(@Nullable Serializable parameter) {
-    final Bundle parameterBundle;
-    if (parameter == null) {
-      parameterBundle = null;
-    } else {
-      parameterBundle = new Bundle(1);
-      parameterBundle.putSerializable(SINGLE_PARAMETER_KEY, parameter);
-    }
-
-    return parameterBundle;
-  }
-
-  public void push(@LayoutRes int layout, @Nullable Bundle parameters) {
-    final ViewStackEntry viewStackEntry = new ViewStackEntry(layout, parameters);
-    final View view = viewStackEntry.getView();
-
-    setTraversingState(TraversingState.PUSHING);
-    if (mViewStack.isEmpty()) {
-      mViewStack.push(viewStackEntry);
-      mFrameLayout.addView(view);
-      ViewUtils.waitForMeasure(view, new ViewUtils.OnMeasuredCallback() {
-        @Override public void onMeasured(View view, int width, int height) {
-          setTraversingState(TraversingState.IDLE);
-        }
-      });
-      return;
-    }
-    final View fromView = mViewStack.peek().getView();
-    mViewStack.push(viewStackEntry);
-    mFrameLayout.addView(view);
-
-    ViewUtils.waitForMeasure(view, new ViewUtils.OnMeasuredCallback() {
-      @Override public void onMeasured(View view, int width, int height) {
-        ViewStack.this.runAnimation(mFrameLayout, fromView, view, Direction.FORWARD);
-      }
-    });
-  }
-
-  /**
-   * Replace the current stack with the given views, if the Serializable component
-   * is the USE_EXISTING_SAVED_STATE tag, then we will use that saved state for that
-   * view (if it exists, and is at the right location in the stack) otherwise this will be null.
-   */
-  public void replaceStack(@NonNull List<Pair<Integer, Bundle>> views) {
-    if (mViewStack.isEmpty()) {
-      throw new IllegalStateException("replaceStack called on empty stack. Use startWith");
-    }
-    setTraversingState(TraversingState.REPLACING);
-
-    final ViewStackEntry fromEntry = mViewStack.peek();
-
-    //take a copy of the view stack:
-    Deque<ViewStackEntry> copy = new ArrayDeque<>(mViewStack);
-
-    mViewStack.clear();
-    mViewStack.push(fromEntry);
-
-    Iterator<ViewStackEntry> iterator = copy.iterator();
-    for (Pair<Integer, Bundle> view : views) {
-      Bundle savedParameter = view.second;
-      if (view.second == USE_EXISTING_SAVED_STATE) {
-        savedParameter = null;
-        if (iterator != null && iterator.hasNext()) {
-          final ViewStackEntry next = iterator.next();
-          if (next.mLayout == view.first) {
-            savedParameter = next.mParameters;
-          } else {
-            iterator = null;
-          }
-        }
-      }
-      mViewStack.push(new ViewStackEntry(view.first, savedParameter));
-    }
-
-    final ViewStackEntry toEntry = mViewStack.peek();
-
-    final View toView = toEntry.getView();
-
-    if (fromEntry.mLayout == toEntry.mLayout) {
-      //if current topEntry layout is equal to the next proposed topEntry layout
-      //we cannot do a transition animation
-      mViewStack.remove(fromEntry);
-      mFrameLayout.removeAllViews();
-      mFrameLayout.addView(toView);
-      ViewUtils.waitForMeasure(toView, new ViewUtils.OnMeasuredCallback() {
-        @Override public void onMeasured(View view, int width, int height) {
-          setTraversingState(TraversingState.IDLE);
-        }
-      });
-    } else {
-      final View fromView = fromEntry.getView();
-      mFrameLayout.addView(toView);
-
-      ViewUtils.waitForMeasure(toView, new ViewUtils.OnMeasuredCallback() {
-        @Override public void onMeasured(View view, int width, int height) {
-          ViewStack.this.runAnimation(mFrameLayout, fromView, toView, Direction.FORWARD);
-          mViewStack.remove(fromEntry);
-        }
-      });
-    }
-  }
-
-  /**
-   * @return the result (if any) of the last popped view, and clears this result.
-   */
-  @Nullable public <T> T getResult() {
-    final T result = (T) mResult;
-    mResult = null;
-    return result;
-  }
-
-
-  @Nullable
-  public <T extends Serializable> T getParameter(@NonNull Object view) {
-    final Bundle parameters = getParameters(view);
-    if (parameters == null) {
-      return null;
-    } else {
-      return (T) parameters.getSerializable(SINGLE_PARAMETER_KEY);
-    }
-  }
-
-  public void setParameter(@NonNull Object view, @Nullable Serializable parameter) {
-    setParameters(view, createSimpleBundle(parameter));
-  }
-
-  /**
-   * @return the start parameters of the view/presenter
-   */
-  @Nullable
-  public Bundle getParameters(@NonNull Object view) {
-    final Iterator<ViewStackEntry> viewStackEntryIterator = mViewStack.descendingIterator();
-    while (viewStackEntryIterator.hasNext()) {
-      final ViewStackEntry viewStackEntry = viewStackEntryIterator.next();
-      if (view == viewStackEntry.mViewReference.get()) {
-        return viewStackEntry.mParameters;
-      }
-    }
-    return null;
-  }
-
-  public void setParameters(@NonNull Object view, @Nullable Bundle parameters) {
-    final Iterator<ViewStackEntry> viewStackEntryIterator = mViewStack.descendingIterator();
-    while (viewStackEntryIterator.hasNext()) {
-      final ViewStackEntry viewStackEntry = viewStackEntryIterator.next();
-      if (view == viewStackEntry.mViewReference.get()) {
-        viewStackEntry.setParameters(parameters);
-        return;
-      }
-    }
-  }
-
-  /**
-   * Pop off the stack, with the given result.
-   *
-   * @param result the result.
-   * @return true if the pop operation has been successful, false otherwise.
-   */
-  public boolean popWithResult(@Nullable Object result) {
-    return popWithResult(1, result);
-  }
-
-  /**
-   * Pop back to the given layout is on top.
-   *
-   * @param layout the layout to be on the top.
-   * @param result the result to return to the (new) top view.
-   * @return true if the pop operation has been successful, false otherwise.
-   */
-  public boolean popBackToWithResult(@LayoutRes int layout, @Nullable Object result) {
-    final Iterator<ViewStackEntry> viewStackEntryIterator = mViewStack.iterator();
-    int popCount = 0;
-    while (viewStackEntryIterator.hasNext()) {
-      final ViewStackEntry next = viewStackEntryIterator.next();
-      if (next.mLayout == layout) {
-        return popWithResult(popCount, result);
-      }
-      popCount++;
-    }
-    return false;
-  }
-
-  public boolean pop(int count) {
-    return popWithResult(count, null);
-  }
-
-  private enum Direction {
-    BACK,
-    FORWARD
-  }
-
-  @AutoParcel static abstract class SaveState implements Parcelable {
-    static SaveState newInstance(@NonNull ViewStack viewstack) {
-      List<SaveStateEntry> stack = new ArrayList<>(viewstack.getViewCount());
-      for (ViewStackEntry entry : viewstack.mViewStack) {
-        stack.add(SaveStateEntry.newInstance(entry.mLayout, entry.mParameters));
-      }
-      return new AutoParcel_ViewStack_SaveState(stack);
-    }
-
-    @NonNull abstract List<SaveStateEntry> stack();
-  }
-
-  @AutoParcel static abstract class SaveStateEntry implements Parcelable {
-    static SaveStateEntry newInstance(int layout, @Nullable Bundle parameters) {
-      return new AutoParcel_ViewStack_SaveStateEntry(layout, parameters);
-    }
-
-    @LayoutRes abstract int layout();
-
-    @Nullable
-    abstract Bundle parameters();
-  }
-
-  private class ViewStackEntry {
-    @LayoutRes private final int mLayout;
-    @Nullable
-    private Bundle mParameters;
-    private WeakReference<View> mViewReference = new WeakReference<>(null);
-
-    ViewStackEntry(@LayoutRes int layout, @Nullable Bundle parameters) {
-      mLayout = layout;
-      mParameters = parameters;
-    }
-
-    void setParameters(@Nullable Bundle parameters) {
-      mParameters = parameters;
-    }
-
-    private View getView() {
-      View view = mViewReference.get();
-      if (view == null) {
-        view = LayoutInflater.from(mFrameLayout.getContext()).inflate(mLayout, mFrameLayout, false);
-        mViewReference = new WeakReference<>(view);
-      }
-      return view;
-    }
-  }
+	//Explicitly create a new string - as we use this reference as a token
+	public static final Bundle USE_EXISTING_SAVED_STATE = new Bundle();
+	private static final String SAVE_STATE_NAME = ViewStack.class.getCanonicalName();
+	private static final String SERVICE_NAME = "view_stack";
+	private static final int DEFAULT_ANIMATION_DURATION_IN_MS = 300;
+	private static final String SINGLE_PARAMETER_KEY = "view_stack_single_param";
+	private final FrameLayout mFrameLayout;
+	private final Collection<ViewStackListener> mViewStackListeners = new ArrayList<>();
+	private Deque<ViewStackEntry> mViewStack = new ArrayDeque<>();
+	private TraversingState mTraversingState = TraversingState.IDLE;
+	private Object mResult;
+
+	public ViewStack(@NonNull FrameLayout frameLayout, @Nullable Bundle saveState) {
+		mFrameLayout = frameLayout;
+		final SaveState parcelable =
+				saveState == null ? null : (SaveState) saveState.getParcelable(SERVICE_NAME);
+		if (parcelable != null) {
+			for (SaveStateEntry entry : parcelable.stack()) {
+				mViewStack.add(new ViewStackEntry(entry.layout(), entry.parameters()));
+			}
+			if (!mViewStack.isEmpty()) {
+				mFrameLayout.addView(mViewStack.peek().getView());
+			}
+		}
+	}
+
+	@Deprecated
+	public static boolean matchesServiceName(String serviceName) {
+		return SERVICE_NAME.equals(serviceName);
+	}
+
+	@Deprecated
+	public static ViewStack get(@NonNull View view) {
+		return ViewStack.get(view.getContext());
+	}
+
+	@Deprecated
+	@SuppressLint("WrongConstant")
+	public static ViewStack get(@NonNull Context context) {
+		//noinspection ResourceType
+		return (ViewStack) context.getSystemService(SERVICE_NAME);
+	}
+
+	public void onSaveInstanceState(@NonNull Bundle outState) {
+		outState.putParcelable(SAVE_STATE_NAME, SaveState.newInstance(this));
+	}
+
+	/**
+	 * It should be called in the {@link Activity#onStart()} in order to handle the {@link Activity}
+	 * lifecycle gracefully.
+	 */
+	public void onStart() {
+		if (mFrameLayout.getChildCount() == 0 && !mViewStack.isEmpty()) {
+			mFrameLayout.addView(mViewStack.peek().getView());
+		}
+	}
+
+	/**
+	 * It should be called in the {@link Activity#onStop()} in order to handle the {@link Activity}
+	 * lifecycle gracefully.
+	 */
+	public void onStop() {
+		if (!mViewStack.isEmpty()) {
+			mFrameLayout.removeView(mViewStack.peek().getView());
+		}
+	}
+
+	/**
+	 * It should be called in the {@link Activity#onBackPressed()} in order to handle the backpress
+	 * events correctly.
+	 *
+	 * @return true if the back press event was handled by the viewstack, false otherwise (and so the
+	 * activity should handle this event).
+	 */
+	public boolean onBackPressed() {
+		final View topView = getTopView();
+		if (topView != null && topView instanceof HandlesBackPresses) {
+			return ((HandlesBackPresses) topView).onBackPressed();
+		}
+		return pop();
+	}
+
+	@Nullable
+	public View getTopView() {
+		final ViewStackEntry peek = mViewStack.peek();
+		if (peek != null) {
+			return peek.getView();
+		}
+		return null;
+	}
+
+	public boolean pop() {
+		return popWithResult(1, null);
+	}
+
+	public boolean popWithResult(int count, @Nullable Object result) {
+		if (mViewStack.size() <= count) {
+			return false;
+		}
+		mResult = result;
+		setTraversingState(TraversingState.POPPING);
+		final View fromView = mViewStack.pop().getView();
+		while (--count > 0) {
+			mViewStack.pop();
+		}
+		final View toView = mViewStack.peek().getView();
+		mFrameLayout.addView(toView);
+		ViewUtils.waitForMeasure(toView, new ViewUtils.OnMeasuredCallback() {
+			@Override
+			public void onMeasured(View view, int width, int height) {
+				ViewStack.this.runAnimation(mFrameLayout, fromView, toView, Direction.BACK);
+			}
+		});
+		return true;
+	}
+
+	public void addTraversingListener(@NonNull ViewStackListener listener) {
+		mViewStackListeners.add(listener);
+	}
+
+	public void removeTraversingListener(@NonNull ViewStackListener listener) {
+		mViewStackListeners.remove(listener);
+	}
+
+	@NonNull
+	public TraversingState getTraversingState() {
+		return mTraversingState;
+	}
+
+	private void setTraversingState(@NonNull TraversingState traversing) {
+		if (traversing != TraversingState.IDLE && mTraversingState != TraversingState.IDLE) {
+			throw new IllegalStateException("ViewStack is currently traversing");
+		}
+
+		mTraversingState = traversing;
+		for (ViewStackListener listener : mViewStackListeners) {
+			listener.onTraversing(mTraversingState);
+		}
+	}
+
+	@LayoutRes
+	public int getTopLayout() {
+		return mViewStack.peek().mLayout;
+	}
+
+	public void replace(@LayoutRes int layout) {
+		replaceWithParameters(layout, null);
+	}
+
+	public void replace(@LayoutRes int layout, @Nullable Serializable parameter) {
+		replaceWithParameters(layout, createSimpleBundle(parameter));
+	}
+
+	public void replaceWithParameters(@LayoutRes int layout, @Nullable Bundle parameters) {
+		setTraversingState(TraversingState.REPLACING);
+		final ViewStackEntry viewStackEntry = new ViewStackEntry(layout, parameters);
+		final View view = viewStackEntry.getView();
+		if (mViewStack.isEmpty()) {
+			throw new IllegalStateException("Replace on an empty stack");
+		}
+
+		final ViewStackEntry topEntry = mViewStack.peek();
+		final View fromView = topEntry.getView();
+		mViewStack.push(viewStackEntry);
+		mFrameLayout.addView(view);
+		ViewUtils.waitForMeasure(view, new ViewUtils.OnMeasuredCallback() {
+			@Override
+			public void onMeasured(View view, int width, int height) {
+				ViewStack.this.runAnimation(mFrameLayout, fromView, view, Direction.FORWARD);
+				mViewStack.remove(topEntry);
+			}
+		});
+	}
+
+	public int getViewCount() {
+		return mViewStack.size();
+	}
+
+	/**
+	 * Starts the viewstack with the given layout, if the viewstack is non-empty, this operation is
+	 * ignored.
+	 *
+	 * @param layout the layout to start with
+	 */
+	public void pushIfEmpty(@LayoutRes int layout) {
+		pushIfEmpty(layout, null);
+	}
+
+	/**
+	 * Starts the viewstack with the given layout, if the viewstack is non-empty, this operation is
+	 * ignored.
+	 *
+	 * @param layout     the layout to start with
+	 * @param parameters the start parameters
+	 */
+	public void pushIfEmpty(@LayoutRes int layout, @Nullable Bundle parameters) {
+		if (mViewStack.isEmpty()) {
+			pushWithParameters(layout, parameters);
+		}
+	}
+
+	/**
+	 * @param layout the layout to start with
+	 * @deprecated use {@link #pushIfEmpty(int)} instead.
+	 * Starts the viewstack with the given layout, if the viewstack is non-empty, this operation is
+	 * ignored.
+	 */
+	@Deprecated
+	public void startWith(@LayoutRes int layout) {
+		startWith(layout, null);
+	}
+
+	/**
+	 * @param layout     the layout to start with
+	 * @param parameters the start parameters
+	 * @deprecated use {@link #pushIfEmpty(int, Bundle)} instead.
+	 * Starts the viewstack with the given layout, if the viewstack is non-empty, this operation is
+	 * ignored.
+	 */
+	@Deprecated
+	public void startWith(@LayoutRes int layout, @Nullable Bundle parameters) {
+		if (mViewStack.isEmpty()) {
+			push(layout, parameters);
+		}
+	}
+
+	public void push(@LayoutRes int layout) {
+		push(layout, (Bundle) null);
+	}
+
+	public void push(@LayoutRes int layout, @Nullable Serializable parameter) {
+		push(layout, createSimpleBundle(parameter));
+	}
+
+	public void pushWithParameters(@LayoutRes int layout, @Nullable Bundle parameters) {
+		final ViewStackEntry viewStackEntry = new ViewStackEntry(layout, parameters);
+		final View view = viewStackEntry.getView();
+
+		setTraversingState(TraversingState.PUSHING);
+		if (mViewStack.isEmpty()) {
+			mViewStack.push(viewStackEntry);
+			mFrameLayout.addView(view);
+			ViewUtils.waitForMeasure(view, new ViewUtils.OnMeasuredCallback() {
+				@Override
+				public void onMeasured(View view, int width, int height) {
+					setTraversingState(TraversingState.IDLE);
+				}
+			});
+			return;
+		}
+		final View fromView = mViewStack.peek().getView();
+		mViewStack.push(viewStackEntry);
+		mFrameLayout.addView(view);
+
+		ViewUtils.waitForMeasure(view, new ViewUtils.OnMeasuredCallback() {
+			@Override
+			public void onMeasured(View view, int width, int height) {
+				ViewStack.this.runAnimation(mFrameLayout, fromView, view, Direction.FORWARD);
+			}
+		});
+	}
+
+	/**
+	 * Replace the current stack with the given views, if the Serializable component
+	 * is the USE_EXISTING_SAVED_STATE tag, then we will use that saved state for that
+	 * view (if it exists, and is at the right location in the stack) otherwise this will be null.
+	 */
+	public void replaceStack(@NonNull List<Pair<Integer, Bundle>> views) {
+		if (mViewStack.isEmpty()) {
+			throw new IllegalStateException("replaceStack called on empty stack. Use startWith");
+		}
+		setTraversingState(TraversingState.REPLACING);
+
+		final ViewStackEntry fromEntry = mViewStack.peek();
+
+		//take a copy of the view stack:
+		Deque<ViewStackEntry> copy = new ArrayDeque<>(mViewStack);
+
+		mViewStack.clear();
+		mViewStack.push(fromEntry);
+
+		Iterator<ViewStackEntry> iterator = copy.iterator();
+		for (Pair<Integer, Bundle> view : views) {
+			Bundle savedParameter = view.second;
+			if (view.second == USE_EXISTING_SAVED_STATE) {
+				savedParameter = null;
+				if (iterator != null && iterator.hasNext()) {
+					final ViewStackEntry next = iterator.next();
+					if (next.mLayout == view.first) {
+						savedParameter = next.mParameters;
+					} else {
+						iterator = null;
+					}
+				}
+			}
+			mViewStack.push(new ViewStackEntry(view.first, savedParameter));
+		}
+
+		final ViewStackEntry toEntry = mViewStack.peek();
+
+		final View toView = toEntry.getView();
+
+		if (fromEntry.mLayout == toEntry.mLayout) {
+			//if current topEntry layout is equal to the next proposed topEntry layout
+			//we cannot do a transition animation
+			mViewStack.remove(fromEntry);
+			mFrameLayout.removeAllViews();
+			mFrameLayout.addView(toView);
+			ViewUtils.waitForMeasure(toView, new ViewUtils.OnMeasuredCallback() {
+				@Override
+				public void onMeasured(View view, int width, int height) {
+					setTraversingState(TraversingState.IDLE);
+				}
+			});
+		} else {
+			final View fromView = fromEntry.getView();
+			mFrameLayout.addView(toView);
+
+			ViewUtils.waitForMeasure(toView, new ViewUtils.OnMeasuredCallback() {
+				@Override
+				public void onMeasured(View view, int width, int height) {
+					ViewStack.this.runAnimation(mFrameLayout, fromView, toView, Direction.FORWARD);
+					mViewStack.remove(fromEntry);
+				}
+			});
+		}
+	}
+
+	/**
+	 * @return the result (if any) of the last popped view, and clears this result.
+	 */
+	@Nullable
+	public <T> T getResult() {
+		final T result = (T) mResult;
+		mResult = null;
+		return result;
+	}
+
+	@Nullable
+	public <T extends Serializable> T getParameter(@NonNull Object view) {
+		final Bundle parameters = getParameters(view);
+		if (parameters == null) {
+			return null;
+		} else {
+			return (T) parameters.getSerializable(SINGLE_PARAMETER_KEY);
+		}
+	}
+
+	public void setParameter(@NonNull Object view, @Nullable Serializable parameter) {
+		setParameters(view, createSimpleBundle(parameter));
+	}
+
+	/**
+	 * @return the start parameters of the view/presenter
+	 */
+	@Nullable
+	public Bundle getParameters(@NonNull Object view) {
+		final Iterator<ViewStackEntry> viewStackEntryIterator = mViewStack.descendingIterator();
+		while (viewStackEntryIterator.hasNext()) {
+			final ViewStackEntry viewStackEntry = viewStackEntryIterator.next();
+			if (view == viewStackEntry.mViewReference.get()) {
+				return viewStackEntry.mParameters;
+			}
+		}
+		return null;
+	}
+
+	public void setParameters(@NonNull Object view, @Nullable Bundle parameters) {
+		final Iterator<ViewStackEntry> viewStackEntryIterator = mViewStack.descendingIterator();
+		while (viewStackEntryIterator.hasNext()) {
+			final ViewStackEntry viewStackEntry = viewStackEntryIterator.next();
+			if (view == viewStackEntry.mViewReference.get()) {
+				viewStackEntry.setParameters(parameters);
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Pop off the stack, with the given result.
+	 *
+	 * @param result the result.
+	 * @return true if the pop operation has been successful, false otherwise.
+	 */
+	public boolean popWithResult(@Nullable Object result) {
+		return popWithResult(1, result);
+	}
+
+	/**
+	 * Pop back to the given layout is on top.
+	 *
+	 * @param layout the layout to be on the top.
+	 * @param result the result to return to the (new) top view.
+	 * @return true if the pop operation has been successful, false otherwise.
+	 */
+	public boolean popBackToWithResult(@LayoutRes int layout, @Nullable Object result) {
+		final Iterator<ViewStackEntry> viewStackEntryIterator = mViewStack.iterator();
+		int popCount = 0;
+		while (viewStackEntryIterator.hasNext()) {
+			final ViewStackEntry next = viewStackEntryIterator.next();
+			if (next.mLayout == layout) {
+				return popWithResult(popCount, result);
+			}
+			popCount++;
+		}
+		return false;
+	}
+
+	public boolean pop(int count) {
+		return popWithResult(count, null);
+	}
+
+	private void runAnimation(final ViewGroup container, final View from, final View to,
+							  Direction direction) {
+		Animator animator = createAnimation(from, to, direction);
+		animator.addListener(new AnimatorListenerAdapter() {
+			@Override
+			public void onAnimationEnd(Animator animation) {
+				container.removeView(from);
+				setTraversingState(TraversingState.IDLE);
+			}
+		});
+		animator.start();
+	}
+
+	@NonNull
+	private Animator createAnimation(@NonNull View from, @NonNull View to,
+									 @NonNull Direction direction) {
+		Animator animation = null;
+		if (to instanceof HasTraversalAnimation) {
+			animation = ((HasTraversalAnimation) to).createAnimation(from);
+		}
+
+		if (animation == null) {
+			return createDefaultAnimation(from, to, direction);
+		} else {
+			return animation;
+		}
+	}
+
+	private Animator createDefaultAnimation(View from, View to, Direction direction) {
+		boolean backward = direction == Direction.BACK;
+
+		AnimatorSet set = new AnimatorSet();
+
+		set.setInterpolator(new OvershootInterpolator());
+		set.setDuration(DEFAULT_ANIMATION_DURATION_IN_MS);
+
+		set.play(ObjectAnimator.ofFloat(from, View.ALPHA, 0.0f));
+		set.play(ObjectAnimator.ofFloat(to, View.ALPHA, 0.5f, 1.0f));
+
+		if (backward) {
+			set.play(ObjectAnimator.ofFloat(from, View.SCALE_X, 1.1f));
+			set.play(ObjectAnimator.ofFloat(from, View.SCALE_Y, 1.1f));
+			set.play(ObjectAnimator.ofFloat(to, View.SCALE_X, 0.9f, 1.0f));
+			set.play(ObjectAnimator.ofFloat(to, View.SCALE_Y, 0.9f, 1.0f));
+		} else {
+			set.play(ObjectAnimator.ofFloat(from, View.SCALE_X, 0.9f));
+			set.play(ObjectAnimator.ofFloat(from, View.SCALE_Y, 0.9f));
+			set.play(ObjectAnimator.ofFloat(to, View.SCALE_X, 1.1f, 1.0f));
+			set.play(ObjectAnimator.ofFloat(to, View.SCALE_Y, 1.1f, 1.0f));
+		}
+
+		return set;
+	}
+
+	@Nullable
+	private Bundle createSimpleBundle(@Nullable Serializable parameter) {
+		final Bundle parameterBundle;
+		if (parameter == null) {
+			parameterBundle = null;
+		} else {
+			parameterBundle = new Bundle(1);
+			parameterBundle.putSerializable(SINGLE_PARAMETER_KEY, parameter);
+		}
+
+		return parameterBundle;
+	}
+
+	private enum Direction {
+		BACK,
+		FORWARD
+	}
+
+	@AutoParcel
+	static abstract class SaveState implements Parcelable {
+		static SaveState newInstance(@NonNull ViewStack viewstack) {
+			List<SaveStateEntry> stack = new ArrayList<>(viewstack.getViewCount());
+			for (ViewStackEntry entry : viewstack.mViewStack) {
+				stack.add(SaveStateEntry.newInstance(entry.mLayout, entry.mParameters));
+			}
+			return new AutoParcel_ViewStack_SaveState(stack);
+		}
+
+		@NonNull
+		abstract List<SaveStateEntry> stack();
+	}
+
+	@AutoParcel
+	static abstract class SaveStateEntry implements Parcelable {
+		static SaveStateEntry newInstance(int layout, @Nullable Bundle parameters) {
+			return new AutoParcel_ViewStack_SaveStateEntry(layout, parameters);
+		}
+
+		@LayoutRes
+		abstract int layout();
+
+		@Nullable
+		abstract Bundle parameters();
+	}
+
+	private class ViewStackEntry {
+		@LayoutRes
+		private final int mLayout;
+		@Nullable
+		private Bundle mParameters;
+		private WeakReference<View> mViewReference = new WeakReference<>(null);
+
+		ViewStackEntry(@LayoutRes int layout, @Nullable Bundle parameters) {
+			mLayout = layout;
+			mParameters = parameters;
+		}
+
+		void setParameters(@Nullable Bundle parameters) {
+			mParameters = parameters;
+		}
+
+		private View getView() {
+			View view = mViewReference.get();
+			if (view == null) {
+				view = LayoutInflater.from(mFrameLayout.getContext()).inflate(mLayout, mFrameLayout, false);
+				mViewReference = new WeakReference<>(view);
+			}
+			return view;
+		}
+	}
 }
