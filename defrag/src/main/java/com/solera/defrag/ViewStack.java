@@ -30,6 +30,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.util.Pair;
 import android.util.AttributeSet;
+import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.animation.OvershootInterpolator;
@@ -137,8 +138,10 @@ public class ViewStack extends FrameLayout {
 		while (--count > 0) {
 			mViewStack.pop();
 		}
-		final View toView = mViewStack.peek().getView();
+		final ViewStackEntry peek = mViewStack.peek();
+		final View toView = peek.getView();
 		addView(toView);
+		peek.restoreState(toView);
 		ViewUtils.waitForMeasure(toView, new ViewUtils.OnMeasuredCallback() {
 			@Override
 			public void onMeasured(View view, int width, int height) {
@@ -195,7 +198,7 @@ public class ViewStack extends FrameLayout {
 
 	public void replaceWithParameters(@LayoutRes int layout, @Nullable Bundle parameters) {
 		setTraversingState(TraversingState.REPLACING);
-		final ViewStackEntry viewStackEntry = new ViewStackEntry(layout, parameters);
+		final ViewStackEntry viewStackEntry = new ViewStackEntry(layout, parameters, null);
 		final View view = viewStackEntry.getView();
 		if (mViewStack.isEmpty()) {
 			throw new IllegalStateException("Replace on an empty stack");
@@ -237,7 +240,7 @@ public class ViewStack extends FrameLayout {
 	}
 
 	public void pushWithParameters(@LayoutRes int layout, @Nullable Bundle parameters) {
-		final ViewStackEntry viewStackEntry = new ViewStackEntry(layout, parameters);
+		final ViewStackEntry viewStackEntry = new ViewStackEntry(layout, parameters, null);
 		final View view = viewStackEntry.getView();
 
 		setTraversingState(TraversingState.PUSHING);
@@ -252,7 +255,10 @@ public class ViewStack extends FrameLayout {
 			});
 			return;
 		}
-		final View fromView = mViewStack.peek().getView();
+
+		final ViewStackEntry peek = mViewStack.peek();
+		final View fromView = peek.getView();
+		peek.saveState(fromView);
 		mViewStack.push(viewStackEntry);
 		addView(view);
 
@@ -297,7 +303,7 @@ public class ViewStack extends FrameLayout {
 					}
 				}
 			}
-			mViewStack.push(new ViewStackEntry(view.first, savedParameter));
+			mViewStack.push(new ViewStackEntry(view.first, savedParameter, null));
 		}
 
 		final ViewStackEntry toEntry = mViewStack.peek();
@@ -445,7 +451,7 @@ public class ViewStack extends FrameLayout {
 	protected void onRestoreInstanceState(Parcelable state) {
 		final SaveState parcelable = (SaveState) state;
 		for (SaveStateEntry entry : parcelable.stack()) {
-			mViewStack.add(new ViewStackEntry(entry.layout(), entry.parameters()));
+			mViewStack.add(new ViewStackEntry(entry.layout(), entry.parameters(), entry.viewState()));
 		}
 		if (!mViewStack.isEmpty()) {
 			addView(mViewStack.peek().getView());
@@ -530,7 +536,7 @@ public class ViewStack extends FrameLayout {
 		static SaveState newInstance(@NonNull ViewStack viewstack, @NonNull Parcelable superState) {
 			List<SaveStateEntry> stack = new ArrayList<>(viewstack.getViewCount());
 			for (ViewStackEntry entry : viewstack.mViewStack) {
-				stack.add(SaveStateEntry.newInstance(entry.mLayout, entry.mParameters));
+				stack.add(SaveStateEntry.newInstance(entry.mLayout, entry.mParameters, entry.mViewState));
 			}
 			return new AutoParcel_ViewStack_SaveState(stack, superState);
 		}
@@ -544,8 +550,8 @@ public class ViewStack extends FrameLayout {
 
 	@AutoParcel
 	static abstract class SaveStateEntry implements Parcelable {
-		static SaveStateEntry newInstance(int layout, @Nullable Bundle parameters) {
-			return new AutoParcel_ViewStack_SaveStateEntry(layout, parameters);
+		static SaveStateEntry newInstance(int layout, @Nullable Bundle parameters, @Nullable SparseArray<Parcelable> viewState) {
+			return new AutoParcel_ViewStack_SaveStateEntry(layout, parameters, viewState);
 		}
 
 		@LayoutRes
@@ -553,6 +559,9 @@ public class ViewStack extends FrameLayout {
 
 		@Nullable
 		abstract Bundle parameters();
+
+		@Nullable
+		abstract SparseArray<Parcelable> viewState();
 	}
 
 	private class ViewStackEntry {
@@ -560,15 +569,30 @@ public class ViewStack extends FrameLayout {
 		private final int mLayout;
 		@Nullable
 		private Bundle mParameters;
+		@Nullable
+		private SparseArray<Parcelable> mViewState;
 		private WeakReference<View> mViewReference = new WeakReference<>(null);
 
-		ViewStackEntry(@LayoutRes int layout, @Nullable Bundle parameters) {
+		ViewStackEntry(@LayoutRes int layout, @Nullable Bundle parameters, @Nullable SparseArray<Parcelable> viewState) {
 			mLayout = layout;
 			mParameters = parameters;
+			mViewState = viewState;
 		}
 
 		void setParameters(@Nullable Bundle parameters) {
 			mParameters = parameters;
+		}
+
+		private void saveState(@NonNull View view) {
+			final SparseArray<Parcelable> parcelableSparseArray = new SparseArray<>();
+			view.saveHierarchyState(parcelableSparseArray);
+			mViewState = parcelableSparseArray;
+		}
+
+		private void restoreState(@NonNull View view) {
+			if (mViewState != null) {
+				view.restoreHierarchyState(mViewState);
+			}
 		}
 
 		private View getView() {
