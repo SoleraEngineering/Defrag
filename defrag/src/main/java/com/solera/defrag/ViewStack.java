@@ -277,7 +277,7 @@ public class ViewStack extends FrameLayout {
 	 */
 	public void replaceStack(@NonNull List<Pair<Integer, Bundle>> views) {
 		if (mViewStack.isEmpty()) {
-			throw new IllegalStateException("replaceStack called on empty stack. Use startWith");
+			throw new IllegalStateException("replaceStack called on empty stack.");
 		}
 		setTraversingState(TraversingState.REPLACING);
 
@@ -292,18 +292,20 @@ public class ViewStack extends FrameLayout {
 		Iterator<ViewStackEntry> iterator = copy.iterator();
 		for (Pair<Integer, Bundle> view : views) {
 			Bundle savedParameter = view.second;
+			SparseArray<Parcelable> viewState = null;
 			if (view.second == USE_EXISTING_SAVED_STATE) {
 				savedParameter = null;
 				if (iterator != null && iterator.hasNext()) {
 					final ViewStackEntry next = iterator.next();
 					if (next.mLayout == view.first) {
 						savedParameter = next.mParameters;
+						viewState = next.mViewState;
 					} else {
 						iterator = null;
 					}
 				}
 			}
-			mViewStack.push(new ViewStackEntry(view.first, savedParameter, null));
+			mViewStack.push(new ViewStackEntry(view.first, savedParameter, viewState));
 		}
 
 		final ViewStackEntry toEntry = mViewStack.peek();
