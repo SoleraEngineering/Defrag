@@ -74,6 +74,9 @@ public class TotalCostView extends FrameLayout implements TotalCostPresenter.Vie
 	@Override
 	protected void onAttachedToWindow() {
 		super.onAttachedToWindow();
+		if (isInEditMode()) {
+			return;
+		}
 		mPresenter.takeView(this);
 	}
 
