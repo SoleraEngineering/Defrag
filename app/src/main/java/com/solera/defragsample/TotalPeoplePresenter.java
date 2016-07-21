@@ -16,21 +16,35 @@
 package com.solera.defragsample;
 
 import android.support.annotation.NonNull;
+
 import com.solera.defrag.ViewStack;
+
 import rx.Observable;
 import rx.Subscription;
 import rx.functions.Action1;
 import rx.functions.Func1;
 
 public class TotalPeoplePresenter extends Presenter<TotalPeoplePresenter.View> {
+  public interface View extends PresenterView {
+    @NonNull
+    Observable<Integer> onTotalPeopleChanged();
+
+    @NonNull
+    Observable<?> onSubmit();
+
+    void enableSubmit(boolean enable);
+
+    void showBreakdown(int totalCost, int totalPeople);
+  }
+
   public static void push(@NonNull ViewStack viewStack, int totalCost) {
-    viewStack.push(R.layout.totalpeople, totalCost);
+    viewStack.pushWithSerializableParameter(R.layout.totalpeople, totalCost);
   }
 
   @Override protected void onTakeView() {
     super.onTakeView();
 
-    final Integer totalCost = ViewStack.get(getContext()).getParameters(getView());
+    final Integer totalCost = ViewStackHelper.getViewStack(getContext()).getSerializableParameter(getView());
     if (totalCost == null) {
       throw new IllegalStateException("Parameter is null");
     }
@@ -61,15 +75,5 @@ public class TotalPeoplePresenter extends Presenter<TotalPeoplePresenter.View> {
         getView().enableSubmit(isValid);
       }
     }, getDefaultErrorAction());
-  }
-
-  public interface View extends PresenterView {
-    @NonNull Observable<Integer> onTotalPeopleChanged();
-
-    @NonNull Observable<?> onSubmit();
-
-    void enableSubmit(boolean enable);
-
-    void showBreakdown(int totalCost, int totalPeople);
   }
 }
