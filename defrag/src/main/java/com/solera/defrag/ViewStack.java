@@ -37,6 +37,7 @@ import android.view.View;
 import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
 
+import com.solera.defrag.exception.EmptyViewStackException;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
@@ -113,20 +114,32 @@ public class ViewStack extends FrameLayout {
 	 * activity should handle this event).
 	 */
 	public boolean onBackPressed() {
-		final View topView = getTopView();
-		if (topView != null && topView instanceof HandlesBackPresses) {
-			return ((HandlesBackPresses) topView).onBackPressed();
+		final View topView;
+		try {
+			topView = getTopView();
+			if (topView != null && topView instanceof HandlesBackPresses) {
+				return ((HandlesBackPresses) topView).onBackPressed();
+			}
+		} catch (EmptyViewStackException e) {
+			// return false as ViewStack is empty
+			return false;
 		}
 		return pop();
 	}
 
-	@Nullable
-	public View getTopView() {
+	/**
+	 * Returns {@link View} that is on the top of the {@link ViewStack} or throw an exception
+	 * if the {@link ViewStack} is empty.
+	 *
+	 * @throws EmptyViewStackException
+	 */
+	public View getTopView() throws EmptyViewStackException {
 		final ViewStackEntry peek = mViewStack.peek();
-		if (peek != null) {
-			return peek.getView();
+
+		if (mViewStack.isEmpty() || peek == null) {
+			throw new EmptyViewStackException();
 		}
-		return null;
+		return peek.getView();
 	}
 
 	public boolean pop() {
@@ -180,9 +193,13 @@ public class ViewStack extends FrameLayout {
 		}
 	}
 
-	@LayoutRes
-	public int getTopLayout() {
-		return mViewStack.peek().mLayout;
+	/**
+	 * Returns top layout resource reference or 0 if {@link ViewStack} is empty and
+	 * no top layout has been found.
+	 */
+	@LayoutRes public int getTopLayout() {
+		final ViewStackEntry peek = mViewStack.peek();
+		return peek != null ? peek.mLayout : 0;
 	}
 
 	public void replace(@LayoutRes int layout) {
