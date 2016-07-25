@@ -44,7 +44,7 @@ bintray {
 
   configurations = ['archives'] //When uploading configuration files
   pkg {
-    repo = 'Maven'
+    repo = 'Defrag1'
     name = 'Defrag'
     desc = 'Defrag desc'
     websiteUrl = siteUrl
