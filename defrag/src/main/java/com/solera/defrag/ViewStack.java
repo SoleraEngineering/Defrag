@@ -36,7 +36,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
-
+import auto.parcel.AutoParcel;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
@@ -45,8 +45,6 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
-
-import auto.parcel.AutoParcel;
 
 /**
  * Handles a stack of views, and animations between these views.
@@ -180,9 +178,13 @@ public class ViewStack extends FrameLayout {
 		}
 	}
 
-	@LayoutRes
-	public int getTopLayout() {
-		return mViewStack.peek().mLayout;
+	/**
+	 * Returns top layout resource reference or 0 if {@link ViewStack} is empty and
+	 * no top layout has been found.
+	 */
+	@LayoutRes public int getTopLayout() {
+		final ViewStackEntry peek = mViewStack.peek();
+		return peek != null ? peek.mLayout : 0;
 	}
 
 	public void replace(@LayoutRes int layout) {
