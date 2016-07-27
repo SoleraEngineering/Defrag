@@ -36,7 +36,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
-import auto.parcel.AutoParcel;
+
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
@@ -45,6 +45,8 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
+
+import auto.parcel.AutoParcel;
 
 /**
  * Handles a stack of views, and animations between these views.
@@ -56,7 +58,7 @@ public class ViewStack extends FrameLayout {
 	private static final int DEFAULT_ANIMATION_DURATION_IN_MS = 300;
 	private static final String SINGLE_PARAMETER_KEY = "view_stack_single_param";
 	private final Collection<ViewStackListener> mViewStackListeners = new ArrayList<>();
-	private Deque<ViewStackEntry> mViewStack = new ArrayDeque<>();
+	private final Deque<ViewStackEntry> mViewStack = new ArrayDeque<>();
 	private TraversingState mTraversingState = TraversingState.IDLE;
 	private Object mResult;
 
@@ -90,6 +92,7 @@ public class ViewStack extends FrameLayout {
 	 */
 	@Deprecated
 	public static ViewStack get(@NonNull View view) {
+		//noinspection deprecation
 		return ViewStack.get(view.getContext());
 	}
 
@@ -192,14 +195,14 @@ public class ViewStack extends FrameLayout {
 	}
 
 	/**
-	 * @deprecated Replaced by {@link #replaceWithSerializableParameter(int, Serializable)}
+	 * @deprecated Replaced by {@link #replaceWithParameter(int, Serializable)}
 	 */
 	@Deprecated
 	public void replace(@LayoutRes int layout, @Nullable Serializable parameter) {
 		replaceWithParameters(layout, createSimpleBundle(parameter));
 	}
 
-	public void replaceWithSerializableParameter(@LayoutRes int layout, @Nullable Serializable parameter) {
+	public void replaceWithParameter(@LayoutRes int layout, @Nullable Serializable parameter) {
 		replaceWithParameters(layout, createSimpleBundle(parameter));
 	}
 
@@ -235,14 +238,14 @@ public class ViewStack extends FrameLayout {
 	/**
 	 * @param layout    the layout file to push.
 	 * @param parameter the parameters of the layout file.
-	 * @deprecated Use {@link #pushWithSerializableParameter(int, Serializable)}
+	 * @deprecated Use {@link #pushWithParameter(int, Serializable)}
 	 */
 	@Deprecated
 	public void push(@LayoutRes int layout, @Nullable Serializable parameter) {
 		pushWithParameters(layout, createSimpleBundle(parameter));
 	}
 
-	public void pushWithSerializableParameter(@LayoutRes int layout, @Nullable Serializable parameter) {
+	public void pushWithParameter(@LayoutRes int layout, @Nullable Serializable parameter) {
 		pushWithParameters(layout, createSimpleBundle(parameter));
 	}
 
@@ -348,6 +351,7 @@ public class ViewStack extends FrameLayout {
 	/**
 	 * @return the result (if any) of the last popped view, and clears this result.
 	 */
+	@SuppressWarnings("unchecked")
 	@Nullable
 	public <T> T getResult() {
 		final T result = (T) mResult;
@@ -358,16 +362,10 @@ public class ViewStack extends FrameLayout {
 	/**
 	 * @param view the view to retrieve the parameters for.
 	 * @return the parameters, or null if none found.
-	 * @deprecated Use {@link #getSerializableParameter(Object)}
 	 */
-	@Deprecated
+	@SuppressWarnings("unchecked")
 	@Nullable
 	public <T extends Serializable> T getParameter(@NonNull Object view) {
-		return getSerializableParameter(view);
-	}
-
-	@Nullable
-	public <T extends Serializable> T getSerializableParameter(@NonNull Object view) {
 		final Bundle parameters = getParameters(view);
 		if (parameters == null) {
 			return null;
@@ -379,14 +377,8 @@ public class ViewStack extends FrameLayout {
 	/**
 	 * @param view      the view to set the parameter for.
 	 * @param parameter the parameter to set.
-	 * @deprecated Use {@link #setSerializableParameter(Object, Serializable)}
 	 */
-	@Deprecated
 	public void setParameter(@NonNull Object view, @Nullable Serializable parameter) {
-		setSerializableParameter(view, parameter);
-	}
-
-	public void setSerializableParameter(@NonNull Object view, @Nullable Serializable parameter) {
 		setParameters(view, createSimpleBundle(parameter));
 	}
 
