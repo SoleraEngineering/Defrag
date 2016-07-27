@@ -58,7 +58,7 @@ public class ViewStack extends FrameLayout {
 	private static final int DEFAULT_ANIMATION_DURATION_IN_MS = 300;
 	private static final String SINGLE_PARAMETER_KEY = "view_stack_single_param";
 	private final Collection<ViewStackListener> mViewStackListeners = new ArrayList<>();
-	private Deque<ViewStackEntry> mViewStack = new ArrayDeque<>();
+	private final Deque<ViewStackEntry> mViewStack = new ArrayDeque<>();
 	private TraversingState mTraversingState = TraversingState.IDLE;
 	private Object mResult;
 
@@ -92,6 +92,7 @@ public class ViewStack extends FrameLayout {
 	 */
 	@Deprecated
 	public static ViewStack get(@NonNull View view) {
+		//noinspection deprecation
 		return ViewStack.get(view.getContext());
 	}
 
@@ -350,6 +351,7 @@ public class ViewStack extends FrameLayout {
 	/**
 	 * @return the result (if any) of the last popped view, and clears this result.
 	 */
+	@SuppressWarnings("unchecked")
 	@Nullable
 	public <T> T getResult() {
 		final T result = (T) mResult;
@@ -361,6 +363,7 @@ public class ViewStack extends FrameLayout {
 	 * @param view the view to retrieve the parameters for.
 	 * @return the parameters, or null if none found.
 	 */
+	@SuppressWarnings("unchecked")
 	@Nullable
 	public <T extends Serializable> T getParameter(@NonNull Object view) {
 		final Bundle parameters = getParameters(view);
