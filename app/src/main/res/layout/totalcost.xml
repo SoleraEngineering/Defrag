@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.solera.defragsample.TotalCostView xmlns:android="http://schemas.android.com/apk/res/android"
-  xmlns:tools="http://schemas.android.com/tools"
-  android:layout_width="match_parent"
-  android:layout_height="match_parent"
-  android:padding="16dp"
-  android:background="@color/colorPrimaryDark"
-  tools:context="com.solera.defragsample.MainActivity"
+                                       xmlns:tools="http://schemas.android.com/tools"
+                                       android:layout_width="match_parent"
+                                       android:layout_height="match_parent"
+                                       android:background="@color/colorPrimaryDark"
+                                       android:padding="16dp"
+                                       tools:context="com.solera.defragsample.MainActivity"
   >
 
   <RelativeLayout
@@ -15,11 +15,11 @@
     >
 
     <TextView
-      android:id="@+id/textview"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:text="Enter total cost"
-      android:textSize="32sp"
+        android:id="@+id/textview"
+        style="@style/TextAppearance.AppCompat.Large.Inverse"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Enter total cost"
       />
 
     <android.support.design.widget.FloatingActionButton
@@ -35,13 +35,13 @@
       />
 
     <EditText
-      android:id="@+id/edittext"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_alignBottom="@id/button"
-      android:hint="0.00"
-      android:inputType="number"
-      android:textSize="32sp"
+        android:id="@+id/edittext"
+        style="@style/TextAppearance.AppCompat.Large.Inverse"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@id/button"
+        android:hint="0.00"
+        android:inputType="number"
       />
   </RelativeLayout>
 </com.solera.defragsample.TotalCostView>
