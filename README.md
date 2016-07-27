@@ -78,10 +78,10 @@ Start parameters and results
 You can push a view with start parameters, these parameters will be saved if the activity is re-created:
 
 ```java
-  viewStack.pushWithSerializableParameter(R.layout.layout_hello,"World!");
+  viewStack.pushWithParameter(R.layout.layout_hello,"World!");
 ```
 
-Any Class that implemnets Serializable can be used, if you need something more complex, use a Bundle:
+Any Class that implements Serializable can be used, if you need something more complex, use a Bundle:
 ```java
   final Bundle parameters = ...
   viewStack.pushWithParameters(R.layout.layout_hello,parameters);
@@ -89,12 +89,12 @@ Any Class that implemnets Serializable can be used, if you need something more c
 
 then, when the view is inflated & created:
 ```java
-  final String parameters = viewStack.getSerializableParameter(this);
+  final String parameters = viewStack.getParameter(this);
   //or a bundle:
   final Bundle parameterBundle  = viewStack.getParameters(this);
   textView.setText("Hullo "+parameters);
   //save the parameters to something different, this is a way to save state when recreating the stack:
-  viewStack.setSerializableParameter(this,"Android!");
+  viewStack.setParameter(this,"Android!");
 ```
 
 Likewise, you can return information to another view by calling setResult, this is equivalent to the startActivityForResult & onActivityResult methods:
@@ -104,7 +104,7 @@ Likewise, you can return information to another view by calling setResult, this 
   viewStack.popWithResult(R.layout.first_layout,"Result");
 ```
 
-Retrieving the result is similiar to getting Parameters (and is persisted when the Activity is recreated):
+Retrieving the result is similar to getting Parameters (and is persisted when the Activity is recreated):
 
 ```java
   final String result = viewStack.getResult();

@@ -38,13 +38,13 @@ public class TotalPeoplePresenter extends Presenter<TotalPeoplePresenter.View> {
   }
 
   public static void push(@NonNull ViewStack viewStack, int totalCost) {
-    viewStack.pushWithSerializableParameter(R.layout.totalpeople, totalCost);
+    viewStack.pushWithParameter(R.layout.totalpeople, totalCost);
   }
 
   @Override protected void onTakeView() {
     super.onTakeView();
 
-    final Integer totalCost = ViewStackHelper.getViewStack(getContext()).getSerializableParameter(getView());
+    final Integer totalCost = ViewStackHelper.getViewStack(getContext()).getParameter(getView());
     if (totalCost == null) {
       throw new IllegalStateException("Parameter is null");
     }
