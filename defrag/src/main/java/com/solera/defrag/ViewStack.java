@@ -54,7 +54,6 @@ import auto.parcel.AutoParcel;
 public class ViewStack extends FrameLayout {
 	//Explicitly create a new string - as we use this reference as a token
 	public static final Bundle USE_EXISTING_SAVED_STATE = new Bundle();
-	private static final String SERVICE_NAME = "view_stack";
 	private static final int DEFAULT_ANIMATION_DURATION_IN_MS = 300;
 	private static final String SINGLE_PARAMETER_KEY = "view_stack_single_param";
 	private final Collection<ViewStackListener> mViewStackListeners = new ArrayList<>();
@@ -77,33 +76,6 @@ public class ViewStack extends FrameLayout {
 	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 	public ViewStack(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
 		super(context, attrs, defStyleAttr, defStyleRes);
-	}
-
-	/**
-	 * @deprecated Use a DI library or have an interface for your containing Activity to return your ViewStack
-	 */
-	@Deprecated
-	public static boolean matchesServiceName(String serviceName) {
-		return SERVICE_NAME.equals(serviceName);
-	}
-
-	/**
-	 * @deprecated Use a DI library or have an interface for your containing Activity to return your ViewStack
-	 */
-	@Deprecated
-	public static ViewStack get(@NonNull View view) {
-		//noinspection deprecation
-		return ViewStack.get(view.getContext());
-	}
-
-	/**
-	 * @deprecated Use a DI library or have an interface for your containing Activity to return your ViewStack
-	 */
-	@Deprecated
-	@SuppressLint("WrongConstant")
-	public static ViewStack get(@NonNull Context context) {
-		//noinspection ResourceType
-		return (ViewStack) context.getSystemService(SERVICE_NAME);
 	}
 
 	/**
@@ -194,14 +166,6 @@ public class ViewStack extends FrameLayout {
 		replaceWithParameters(layout, null);
 	}
 
-	/**
-	 * @deprecated Replaced by {@link #replaceWithParameter(int, Serializable)}
-	 */
-	@Deprecated
-	public void replace(@LayoutRes int layout, @Nullable Serializable parameter) {
-		replaceWithParameters(layout, createSimpleBundle(parameter));
-	}
-
 	public void replaceWithParameter(@LayoutRes int layout, @Nullable Serializable parameter) {
 		replaceWithParameters(layout, createSimpleBundle(parameter));
 	}
@@ -233,16 +197,6 @@ public class ViewStack extends FrameLayout {
 
 	public void push(@LayoutRes int layout) {
 		pushWithParameters(layout, null);
-	}
-
-	/**
-	 * @param layout    the layout file to push.
-	 * @param parameter the parameters of the layout file.
-	 * @deprecated Use {@link #pushWithParameter(int, Serializable)}
-	 */
-	@Deprecated
-	public void push(@LayoutRes int layout, @Nullable Serializable parameter) {
-		pushWithParameters(layout, createSimpleBundle(parameter));
 	}
 
 	public void pushWithParameter(@LayoutRes int layout, @Nullable Serializable parameter) {
