@@ -27,32 +27,32 @@ import rx.subscriptions.CompositeSubscription;
  * Based presenter.
  */
 public abstract class Presenter<T extends PresenterView> {
-	private T mView;
-	private CompositeSubscription mViewSubscriptions;
+	private T view;
+	private CompositeSubscription viewSubscriptions;
 
 	public final void takeView(@NonNull T view) {
-		if (mView != null) {
+		if (this.view != null) {
 			throw new IllegalStateException(
 					"Presenter already has the view or the dropview isn't called");
 		}
 
-		mView = view;
-		mViewSubscriptions = new CompositeSubscription();
+		this.view = view;
+		viewSubscriptions = new CompositeSubscription();
 		onTakeView();
 	}
 
 	public final void dropView() {
 		onDropView();
-		mView = null;
-		mViewSubscriptions.clear();
+		view = null;
+		viewSubscriptions.clear();
 	}
 
 	public final void addViewSubscription(@NonNull Subscription subscription) {
-		mViewSubscriptions.add(subscription);
+		viewSubscriptions.add(subscription);
 	}
 
 	public final void removeViewSubscription(@NonNull Subscription subscription) {
-		mViewSubscriptions.remove(subscription);
+		viewSubscriptions.remove(subscription);
 	}
 
 	protected void onTakeView() {
@@ -74,7 +74,7 @@ public abstract class Presenter<T extends PresenterView> {
 	 * @return view that this presenter is attached to.
 	 */
 	protected final T getView() {
-		return mView;
+		return view;
 	}
 
 	/**

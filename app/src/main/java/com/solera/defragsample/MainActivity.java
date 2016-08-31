@@ -29,28 +29,28 @@ import butterknife.ButterKnife;
 
 public class MainActivity extends AppCompatActivity {
 	@Bind(R.id.viewstack)
-	ViewStack mViewStack;
-	private boolean mDisableUI = false;
+	ViewStack viewStack;
+	private boolean disableUI = false;
 
 	@Override
 	public void onBackPressed() {
-		if (mDisableUI) {
+		if (disableUI) {
 			return;
 		}
-		if (!mViewStack.onBackPressed()) {
+		if (!viewStack.onBackPressed()) {
 			super.onBackPressed();
 		}
 	}
 
 	@Override
 	public boolean dispatchTouchEvent(@NonNull MotionEvent ev) {
-		return mDisableUI || super.dispatchTouchEvent(ev);
+		return disableUI || super.dispatchTouchEvent(ev);
 	}
 
 	@Override
 	public Object getSystemService(@NonNull String name) {
 		if (ViewStackHelper.matchesServiceName(name)) {
-			return mViewStack;
+			return viewStack;
 		}
 		return super.getSystemService(name);
 	}
@@ -62,15 +62,15 @@ public class MainActivity extends AppCompatActivity {
 
 		ButterKnife.bind(this);
 
-		mViewStack.addTraversingListener(new ViewStackListener() {
+		viewStack.addTraversingListener(new ViewStackListener() {
 			@Override
 			public void onTraversing(@NonNull TraversingState traversingState) {
-				mDisableUI = traversingState != TraversingState.IDLE;
+				disableUI = traversingState != TraversingState.IDLE;
 			}
 		});
 
 		if (savedInstanceState == null) {
-			mViewStack.push(R.layout.totalcost);
+			viewStack.push(R.layout.totalcost);
 		}
 	}
 }
