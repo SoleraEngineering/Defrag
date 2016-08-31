@@ -30,11 +30,11 @@ import butterknife.ButterKnife;
 import rx.Observable;
 
 public class TotalCostView extends FrameLayout implements TotalCostPresenter.View {
-	private final TotalCostPresenter mPresenter = new TotalCostPresenter();
+	private final TotalCostPresenter presenter = new TotalCostPresenter();
 	@Bind(R.id.button)
-	FloatingActionButton mFloatingActionButton;
+	FloatingActionButton floatingActionButton;
 	@Bind(R.id.edittext)
-	EditText mEditText;
+	EditText editText;
 
 	public TotalCostView(Context context, AttributeSet attrs) {
 		super(context, attrs);
@@ -43,21 +43,21 @@ public class TotalCostView extends FrameLayout implements TotalCostPresenter.Vie
 	@NonNull
 	@Override
 	public Observable<CharSequence> onTotalCostChanged() {
-		return RxTextView.textChanges(mEditText);
+		return RxTextView.textChanges(editText);
 	}
 
 	@NonNull
 	@Override
 	public Observable<?> onSubmit() {
-		return Observable.merge(RxView.clicks(mFloatingActionButton),
-				RxTextView.editorActions(mEditText));
+		return Observable.merge(RxView.clicks(floatingActionButton),
+				RxTextView.editorActions(editText));
 	}
 
 	@Override
 	public void enableSubmit(boolean enable) {
-		mFloatingActionButton.setEnabled(enable);
+		floatingActionButton.setEnabled(enable);
 		final float scaleTo = enable ? 1.0f : 0.0f;
-		mFloatingActionButton.animate().scaleX(scaleTo).scaleY(scaleTo);
+		floatingActionButton.animate().scaleX(scaleTo).scaleY(scaleTo);
 	}
 
 	@Override
@@ -77,12 +77,12 @@ public class TotalCostView extends FrameLayout implements TotalCostPresenter.Vie
 		if (isInEditMode()) {
 			return;
 		}
-		mPresenter.takeView(this);
+		presenter.takeView(this);
 	}
 
 	@Override
 	protected void onDetachedFromWindow() {
 		super.onDetachedFromWindow();
-		mPresenter.dropView();
+		presenter.dropView();
 	}
 }

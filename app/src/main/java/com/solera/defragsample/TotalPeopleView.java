@@ -33,13 +33,13 @@ import rx.functions.Action1;
 import rx.functions.Func1;
 
 public class TotalPeopleView extends FrameLayout implements TotalPeoplePresenter.View {
-	private final TotalPeoplePresenter mPresenter = new TotalPeoplePresenter();
+	private final TotalPeoplePresenter presenter = new TotalPeoplePresenter();
 	@Bind(R.id.button)
-	FloatingActionButton mFloatingActionButton;
+	FloatingActionButton floatingActionButton;
 	@Bind(R.id.seekbar)
-	AppCompatSeekBar mSeekBar;
+	AppCompatSeekBar seekBar;
 	@Bind(R.id.textview_number)
-	TextView mTextView;
+	TextView textView;
 
 	public TotalPeopleView(Context context, AttributeSet attrs) {
 		super(context, attrs);
@@ -48,7 +48,7 @@ public class TotalPeopleView extends FrameLayout implements TotalPeoplePresenter
 	@NonNull
 	@Override
 	public Observable<Integer> onTotalPeopleChanged() {
-		return RxSeekBar.changes(mSeekBar).map(new Func1<Integer, Integer>() {
+		return RxSeekBar.changes(seekBar).map(new Func1<Integer, Integer>() {
 			@Override
 			public Integer call(Integer integer) {
 				return integer / 12;
@@ -56,7 +56,7 @@ public class TotalPeopleView extends FrameLayout implements TotalPeoplePresenter
 		}).doOnNext(new Action1<Integer>() {
 			@Override
 			public void call(Integer integer) {
-				mTextView.setText(Integer.toString(integer));
+				textView.setText(Integer.toString(integer));
 			}
 		});
 	}
@@ -64,15 +64,15 @@ public class TotalPeopleView extends FrameLayout implements TotalPeoplePresenter
 	@NonNull
 	@Override
 	public Observable<?> onSubmit() {
-		return RxView.clicks(mFloatingActionButton);
+		return RxView.clicks(floatingActionButton);
 	}
 
 	@Override
 	public void enableSubmit(boolean enable) {
-		mFloatingActionButton.setEnabled(enable);
+		floatingActionButton.setEnabled(enable);
 		final float scaleTo = enable ? 1.0f : 0.0f;
-		mFloatingActionButton.animate().scaleX(scaleTo).scaleY(scaleTo);
-		mTextView.animate().scaleX(scaleTo).scaleY(scaleTo);
+		floatingActionButton.animate().scaleX(scaleTo).scaleY(scaleTo);
+		textView.animate().scaleX(scaleTo).scaleY(scaleTo);
 	}
 
 	@Override
@@ -92,12 +92,12 @@ public class TotalPeopleView extends FrameLayout implements TotalPeoplePresenter
 		if (isInEditMode()) {
 			return;
 		}
-		mPresenter.takeView(this);
+		presenter.takeView(this);
 	}
 
 	@Override
 	protected void onDetachedFromWindow() {
 		super.onDetachedFromWindow();
-		mPresenter.dropView();
+		presenter.dropView();
 	}
 }

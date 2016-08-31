@@ -27,11 +27,11 @@ import butterknife.ButterKnife;
 public class BreakdownView extends FrameLayout implements BreakdownPresenter.View {
 	private final BreakdownPresenter mPresenter = new BreakdownPresenter();
 	@Bind(R.id.textview_costvalue)
-	TextView mCostTextView;
+	TextView costTextView;
 	@Bind(R.id.textview_peoplevalue)
-	TextView mPeopleTextView;
+	TextView peopleTextView;
 	@Bind(R.id.textview_perpersonvalue)
-	TextView mPerPersonTextView;
+	TextView perPersonTextView;
 
 	public BreakdownView(Context context, AttributeSet attrs) {
 		super(context, attrs);
@@ -40,9 +40,9 @@ public class BreakdownView extends FrameLayout implements BreakdownPresenter.Vie
 	@Override
 	public void setUi(@NonNull String totalCost, @NonNull String totalPeople,
 					  @NonNull String perPerson) {
-		mCostTextView.setText(totalCost);
-		mPeopleTextView.setText(totalPeople);
-		mPerPersonTextView.setText(perPerson);
+		costTextView.setText(totalCost);
+		peopleTextView.setText(totalPeople);
+		perPersonTextView.setText(perPerson);
 	}
 
 	@Override
