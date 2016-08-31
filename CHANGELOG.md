@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Version 0.9.0
+----------------------------
+ * Removed deprecated code.
+
 Version 0.9.0-beta2
 ----------------------------
  * Renamed parameter methods from xxSerializedParameter to xxParameter, now use xxParameter to set simple parameter, and xxParameters to use Bundle.

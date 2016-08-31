@@ -9,7 +9,7 @@ Defrag is available in the jCenter repository:
 
 ```java
 dependencies {
-  compile 'com.solera.defrag:defrag:0.9.0-beta2'
+  compile 'com.solera.defrag:defrag:0.9.0'
 }
 ```
 
@@ -115,6 +115,8 @@ Take a look at the [sample app](https://github.com/R3PI/Defrag/tree/master/app) 
 Thanks to
 ---
 The inspiration of this library was from Square's article on Fragments, and from their library Flow (https://github.com/square/flow).
+
+[![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-Defrag-green.svg?style=true)](https://android-arsenal.com/details/1/3693)
 
 License:
 ---
