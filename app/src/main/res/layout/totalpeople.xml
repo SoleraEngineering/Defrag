@@ -15,11 +15,11 @@
     >
 
     <TextView
-      android:id="@+id/textview"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:text="Total people"
-      android:textSize="32sp"
+        android:id="@+id/textview"
+        style="@style/TextAppearance.AppCompat.Large.Inverse"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Total people"
       />
 
     <FrameLayout
@@ -40,15 +40,15 @@
         />
 
       <TextView
-        android:id="@+id/textview_number"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:elevation="16dp"
-        android:textColor="#FFFFFF"
-        android:textSize="32sp"
-        android:scaleX="0"
-        android:scaleY="0"
+          android:id="@+id/textview_number"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_gravity="center"
+          android:elevation="16dp"
+          android:scaleX="0"
+          android:scaleY="0"
+          android:textColor="#FFFFFF"
+          android:textSize="32sp"
         />
     </FrameLayout>
 

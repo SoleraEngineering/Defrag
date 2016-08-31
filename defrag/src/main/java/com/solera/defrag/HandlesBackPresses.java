@@ -22,7 +22,7 @@ package com.solera.defrag;
  */
 public interface HandlesBackPresses {
   /**
-   * Handle a backpress event.
+   * Handle a back press event.
    *
    * @return true if the view handled this event, false otherwise. If the event is not handled here,
    * the activity should handle it.

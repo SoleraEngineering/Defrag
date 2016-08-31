@@ -21,54 +21,68 @@ import android.support.design.widget.FloatingActionButton;
 import android.util.AttributeSet;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import butterknife.Bind;
-import butterknife.ButterKnife;
+
 import com.jakewharton.rxbinding.view.RxView;
 import com.jakewharton.rxbinding.widget.RxTextView;
-import com.solera.defrag.ViewStack;
+
+import butterknife.Bind;
+import butterknife.ButterKnife;
 import rx.Observable;
 
 public class TotalCostView extends FrameLayout implements TotalCostPresenter.View {
-  private final TotalCostPresenter mPresenter = new TotalCostPresenter();
-  @Bind(R.id.button) FloatingActionButton mFloatingActionButton;
-  @Bind(R.id.edittext) EditText mEditText;
+	private final TotalCostPresenter presenter = new TotalCostPresenter();
+	@Bind(R.id.button)
+	FloatingActionButton floatingActionButton;
+	@Bind(R.id.edittext)
+	EditText editText;
 
-  public TotalCostView(Context context, AttributeSet attrs) {
-    super(context, attrs);
-  }
+	public TotalCostView(Context context, AttributeSet attrs) {
+		super(context, attrs);
+	}
 
-  @Override protected void onFinishInflate() {
-    super.onFinishInflate();
-    ButterKnife.bind(this);
+	@NonNull
+	@Override
+	public Observable<CharSequence> onTotalCostChanged() {
+		return RxTextView.textChanges(editText);
+	}
 
-  }
+	@NonNull
+	@Override
+	public Observable<?> onSubmit() {
+		return Observable.merge(RxView.clicks(floatingActionButton),
+				RxTextView.editorActions(editText));
+	}
 
-  @Override protected void onAttachedToWindow() {
-    super.onAttachedToWindow();
-    mPresenter.takeView(this);
-  }
+	@Override
+	public void enableSubmit(boolean enable) {
+		floatingActionButton.setEnabled(enable);
+		final float scaleTo = enable ? 1.0f : 0.0f;
+		floatingActionButton.animate().scaleX(scaleTo).scaleY(scaleTo);
+	}
 
-  @Override protected void onDetachedFromWindow() {
-    super.onDetachedFromWindow();
-    mPresenter.dropView();
-  }
+	@Override
+	public void showTotalPeople(int totalCost) {
+		TotalPeoplePresenter.push(ViewStackHelper.getViewStack(this), totalCost);
+	}
 
-  @NonNull @Override public Observable<CharSequence> onTotalCostChanged() {
-    return RxTextView.textChanges(mEditText);
-  }
+	@Override
+	protected void onFinishInflate() {
+		super.onFinishInflate();
+		ButterKnife.bind(this);
+	}
 
-  @NonNull @Override public Observable<?> onSubmit() {
-    return Observable.merge(RxView.clicks(mFloatingActionButton),
-        RxTextView.editorActions(mEditText));
-  }
+	@Override
+	protected void onAttachedToWindow() {
+		super.onAttachedToWindow();
+		if (isInEditMode()) {
+			return;
+		}
+		presenter.takeView(this);
+	}
 
-  @Override public void enableSubmit(boolean enable) {
-    mFloatingActionButton.setEnabled(enable);
-    final float scaleTo = enable ? 1.0f : 0.0f;
-    mFloatingActionButton.animate().scaleX(scaleTo).scaleY(scaleTo);
-  }
-
-  @Override public void showTotalPeople(int totalCost) {
-    TotalPeoplePresenter.push(ViewStack.get(this),totalCost);
-  }
+	@Override
+	protected void onDetachedFromWindow() {
+		super.onDetachedFromWindow();
+		presenter.dropView();
+	}
 }
