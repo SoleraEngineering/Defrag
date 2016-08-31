@@ -4,7 +4,7 @@ apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'android-apt'
 
 group = 'com.solera.defrag'
-version = '0.9.0-beta2'
+version = '0.9.0'
 
 
 android {
