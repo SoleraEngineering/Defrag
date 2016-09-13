@@ -9,18 +9,22 @@ Defrag is available in the jCenter repository:
 
 ```java
 dependencies {
-  compile 'com.solera.defrag:defrag:0.8.2'
+  compile 'com.solera.defrag:defrag:0.9.0'
 }
 ```
 
 Usage
 -----
 
-Attach a `ViewStack` instance to a `ViewGroup` container in your layout, and push the initial layout to the stack:
+Add ViewStack to your layout and push/pop your views to it. View state are saved and restored as the
+stack changes, and smooth traversal animations happen automatically. In your Activity's onCreate:
 
 ```java
-ViewStack viewStack = new ViewStack(mainLayout, savedInstanceState);
-viewStack.startWith(R.layout.first_layout); //startWith is a no-op if the viewStack has views from savedInstanceState
+final ViewStack viewStack = (ViewStack) findViewById(R.id.viewstack);
+if (savedInstanceState == null) {
+  //no previous state, so push the first view
+  viewStack.push(R.layout.first_layout);
+}
 ```
 
 To push a new view to the foreground:
@@ -74,25 +78,33 @@ Start parameters and results
 You can push a view with start parameters, these parameters will be saved if the activity is re-created:
 
 ```java
-  viewStack.push(R.layout.layout_hello,"World!");
+  viewStack.pushWithParameter(R.layout.layout_hello,"World!");
+```
+
+Any Class that implements Serializable can be used, if you need something more complex, use a Bundle:
+```java
+  final Bundle parameters = ...
+  viewStack.pushWithParameters(R.layout.layout_hello,parameters);
 ```
 
 then, when the view is inflated & created:
 ```java
-  final String parameters = viewStack.getParameters(this);
+  final String parameters = viewStack.getParameter(this);
+  //or a bundle:
+  final Bundle parameterBundle  = viewStack.getParameters(this);
   textView.setText("Hullo "+parameters);
   //save the parameters to something different, this is a way to save state when recreating the stack:
-  viewStack.setParameters(this,"Android!");
+  viewStack.setParameter(this,"Android!");
 ```
 
 Likewise, you can return information to another view by calling setResult, this is equivalent to the startActivityForResult & onActivityResult methods:
 
 ```java
   //finished with this view, pop back a particular view, with a result:
-  viewStack.pop(R.layout.first_layout,"Result");
+  viewStack.popWithResult(R.layout.first_layout,"Result");
 ```
 
-Retrieving the result is similiar to getting Parameters (and is persisted when the Activity is recreated):
+Retrieving the result is similar to getting Parameters (and is persisted when the Activity is recreated):
 
 ```java
   final String result = viewStack.getResult();
@@ -103,6 +115,8 @@ Take a look at the [sample app](https://github.com/R3PI/Defrag/tree/master/app) 
 Thanks to
 ---
 The inspiration of this library was from Square's article on Fragments, and from their library Flow (https://github.com/square/flow).
+
+[![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-Defrag-green.svg?style=true)](https://android-arsenal.com/details/1/3693)
 
 License:
 ---
