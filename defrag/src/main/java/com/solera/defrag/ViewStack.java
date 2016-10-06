@@ -169,7 +169,15 @@ public class ViewStack extends FrameLayout {
 		replaceWithParameters(layout, createSimpleBundle(parameter));
 	}
 
-	public void replaceWithParameters(@LayoutRes int layout, @Nullable Bundle parameters) {
+	public void replaceWithParameters(@LayoutRes final int layout, @Nullable final Bundle parameters) {
+		ViewUtils.waitForTraversingState(this, TraversingState.IDLE, new ViewStackListener() {
+			@Override public void onTraversing(@NonNull TraversingState traversingState) {
+				replaceWithParametersInternal(layout, parameters);
+			}
+		});
+	}
+
+	private void replaceWithParametersInternal(@LayoutRes int layout, @Nullable Bundle parameters) {
 		setTraversingState(TraversingState.REPLACING);
 		final ViewStackEntry viewStackEntry = new ViewStackEntry(layout, parameters, null);
 		final View view = viewStackEntry.getView();
@@ -202,7 +210,15 @@ public class ViewStack extends FrameLayout {
 		pushWithParameters(layout, createSimpleBundle(parameter));
 	}
 
-	public void pushWithParameters(@LayoutRes int layout, @Nullable Bundle parameters) {
+	public void pushWithParameters(@LayoutRes final int layout, @Nullable final Bundle parameters) {
+		ViewUtils.waitForTraversingState(this, TraversingState.IDLE, new ViewStackListener() {
+			@Override public void onTraversing(@NonNull TraversingState traversingState) {
+				pushWithParametersInternal(layout, parameters);
+			}
+		});
+	}
+
+	private void pushWithParametersInternal(@LayoutRes int layout, @Nullable Bundle parameters) {
 		final ViewStackEntry viewStackEntry = new ViewStackEntry(layout, parameters, null);
 		final View view = viewStackEntry.getView();
 
@@ -238,7 +254,15 @@ public class ViewStack extends FrameLayout {
 	 * is the USE_EXISTING_SAVED_STATE tag, then we will use that saved state for that
 	 * view (if it exists, and is at the right location in the stack) otherwise this will be null.
 	 */
-	public void replaceStack(@NonNull List<Pair<Integer, Bundle>> views) {
+	public void replaceStack(@NonNull final List<Pair<Integer, Bundle>> views) {
+		ViewUtils.waitForTraversingState(this, TraversingState.IDLE, new ViewStackListener() {
+			@Override public void onTraversing(@NonNull TraversingState traversingState) {
+				replaceStackInternal(views);
+			}
+		});
+	}
+
+	private void replaceStackInternal(@NonNull List<Pair<Integer, Bundle>> views) {
 		if (viewStack.isEmpty()) {
 			throw new IllegalStateException("replaceStack called on empty stack.");
 		}

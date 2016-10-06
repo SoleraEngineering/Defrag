@@ -61,6 +61,30 @@ public class ViewUtils {
     });
   }
 
+  /**
+   * Call the given callback when viewStack will be in the given state (if it is already in the
+   * given state, the callback is immediately invoked).
+   *
+   * @param viewStack the viewStack to wait on
+   * @param desiredState the traversing state to wait on
+   * @param callback the callback to invoke
+   */
+  @MainThread public static void waitForTraversingState(@NonNull final ViewStack viewStack,
+      @NonNull final TraversingState desiredState, @NonNull final ViewStackListener callback) {
+    if (desiredState == viewStack.getTraversingState()) {
+      callback.onTraversing(desiredState);
+    } else {
+      viewStack.addTraversingListener(new ViewStackListener() {
+        @Override public void onTraversing(@NonNull TraversingState traversingState) {
+          if (traversingState == desiredState) {
+            viewStack.removeTraversingListener(this);
+            callback.onTraversing(desiredState);
+          }
+        }
+      });
+    }
+  }
+
   public interface OnMeasuredCallback {
     void onMeasured(View view, int width, int height);
   }
