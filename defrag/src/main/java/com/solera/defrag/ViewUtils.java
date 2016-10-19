@@ -18,6 +18,7 @@
  */
 package com.solera.defrag;
 
+import android.os.Looper;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.view.View;
@@ -28,6 +29,18 @@ import android.view.ViewTreeObserver;
  */
 public class ViewUtils {
   private ViewUtils() {
+  }
+
+  /**
+   * Verify that the calling thread is the Android main thread.
+   *
+   * @throws IllegalStateException when called from any other thread.
+   */
+  public static void verifyMainThread() {
+    if (Looper.myLooper() != Looper.getMainLooper()) {
+      throw new IllegalStateException(
+          "Expected to be called on the main thread but was " + Thread.currentThread().getName());
+    }
   }
 
   /**

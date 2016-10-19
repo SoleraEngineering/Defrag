@@ -44,6 +44,7 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import auto.parcel.AutoParcel;
 
@@ -55,7 +56,7 @@ public class ViewStack extends FrameLayout {
 	public static final Bundle USE_EXISTING_SAVED_STATE = new Bundle();
 	private static final int DEFAULT_ANIMATION_DURATION_IN_MS = 300;
 	private static final String SINGLE_PARAMETER_KEY = "view_stack_single_param";
-	private final Collection<ViewStackListener> viewStackListeners = new ArrayList<>();
+	private final Collection<ViewStackListener> viewStackListeners = new CopyOnWriteArrayList<>();
 	private final Deque<ViewStackEntry> viewStack = new ArrayDeque<>();
 	private TraversingState traversingState = TraversingState.IDLE;
 	private Object result;
@@ -129,10 +130,12 @@ public class ViewStack extends FrameLayout {
 	}
 
 	public void addTraversingListener(@NonNull ViewStackListener listener) {
+		ViewUtils.verifyMainThread();
 		viewStackListeners.add(listener);
 	}
 
 	public void removeTraversingListener(@NonNull ViewStackListener listener) {
+		ViewUtils.verifyMainThread();
 		viewStackListeners.remove(listener);
 	}
 
