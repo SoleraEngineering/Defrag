@@ -310,8 +310,8 @@ public class ViewStack extends FrameLayout {
 	 * is the USE_EXISTING_SAVED_STATE tag, then we will use that saved state for that
 	 * view (if it exists, and is at the right location in the stack) otherwise this will be null.
 	 */
-	public void replaceStack(@LayoutRes Integer layoutRes, @Nullable Bundle bundle) {
-		replaceStack(Collections.singletonList(Pair.create(layoutRes, bundle)));
+	public void replaceStack(@LayoutRes Integer layout, @Nullable Bundle parameters) {
+		replaceStack(Collections.singletonList(Pair.create(layout, parameters)));
 	}
 
 	/**

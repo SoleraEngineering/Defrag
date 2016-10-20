@@ -56,11 +56,11 @@ public class ViewStackUtils {
 	 * TraversingState#IDLE}. If it is already in the idle state, method is invoked immediately.
 	 */
 	public static void safeReplaceStack(@NonNull final ViewStack viewStack,
-			@LayoutRes final Integer layoutRes, @Nullable final Bundle bundle) {
+			@LayoutRes final Integer layout, @Nullable final Bundle parameters) {
 		waitForTraversingState(viewStack, TraversingState.IDLE, new ViewStackListener() {
 			@Override
 			public void onTraversing(@NonNull TraversingState traversingState) {
-				viewStack.replaceStack(layoutRes, bundle);
+				viewStack.replaceStack(layout, parameters);
 			}
 		});
 	}
