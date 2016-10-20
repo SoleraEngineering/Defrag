@@ -41,6 +41,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
@@ -302,6 +303,15 @@ public class ViewStack extends FrameLayout {
 				}
 			});
 		}
+	}
+
+	/**
+	 * Replace the current stack with the given view, if the Serializable component
+	 * is the USE_EXISTING_SAVED_STATE tag, then we will use that saved state for that
+	 * view (if it exists, and is at the right location in the stack) otherwise this will be null.
+	 */
+	public void replaceStack(@LayoutRes Integer layoutRes, @Nullable Bundle bundle) {
+		replaceStack(Collections.singletonList(Pair.create(layoutRes, bundle)));
 	}
 
 	/**
