@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+Version 1.0.0
+----------------------------
+ * Added safe operations helper class.
+ * Fixed issue where ConcurrentModificationException would occur when removing listeners while traversing the listener list.
+
 Version 0.9.0
 ----------------------------
  * Removed deprecated code.
