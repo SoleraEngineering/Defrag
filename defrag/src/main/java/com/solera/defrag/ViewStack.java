@@ -238,7 +238,7 @@ public class ViewStack extends FrameLayout {
 	}
 
 	/**
-	 * Replace the current stack with the given views, if the Serializable component
+	 * Replace the current stack with the given views, if the Bundle component
 	 * is the USE_EXISTING_SAVED_STATE tag, then we will use that saved state for that
 	 * view (if it exists, and is at the right location in the stack) otherwise this will be null.
 	 */
@@ -306,7 +306,7 @@ public class ViewStack extends FrameLayout {
 	}
 
 	/**
-	 * Replace the current stack with the given view, if the Serializable component
+	 * Replace the current stack with the given view, if the Bundle component
 	 * is the USE_EXISTING_SAVED_STATE tag, then we will use that saved state for that
 	 * view (if it exists, and is at the right location in the stack) otherwise this will be null.
 	 */
