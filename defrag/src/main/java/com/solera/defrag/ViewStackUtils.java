@@ -52,6 +52,20 @@ public class ViewStackUtils {
 	}
 
 	/**
+	 * Safely replace the {@link ViewStack} stack as soon as the {@link ViewStack} will be in {@link
+	 * TraversingState#IDLE}. If it is already in the idle state, method is invoked immediately.
+	 */
+	public static void safeReplaceStack(@NonNull final ViewStack viewStack,
+			@LayoutRes final Integer layout, @Nullable final Bundle parameters) {
+		waitForTraversingState(viewStack, TraversingState.IDLE, new ViewStackListener() {
+			@Override
+			public void onTraversing(@NonNull TraversingState traversingState) {
+				viewStack.replaceStack(layout, parameters);
+			}
+		});
+	}
+
+	/**
 	 * Safely push a view (as soon as the {@link ViewStack} will be in {@link TraversingState#IDLE},
 	 * if it is already in the idle state, method is invoked immediately).
 	 */
