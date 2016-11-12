@@ -415,7 +415,7 @@ public class ViewStack extends FrameLayout {
 	@Override
 	protected int getChildDrawingOrder(int childCount, int index) {
 		//if this method gets called - always reverse the order
-		//There are at most 2 views in this viewgroup
+		//There are at most 2 views in this ViewGroup
 		return index == 0 ? 1 : 0;
 	}
 
