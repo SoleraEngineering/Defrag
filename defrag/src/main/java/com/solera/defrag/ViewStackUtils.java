@@ -29,9 +29,9 @@ public class ViewStackUtils {
 	 */
 	public static void safeReplaceWithParameters(@NonNull final ViewStack viewStack,
 			@LayoutRes final int layout, @Nullable final Bundle parameters) {
-		waitForTraversingState(viewStack, TraversingState.IDLE, new ViewStackListener() {
+		waitForTraversingState(viewStack, TraversingState.IDLE, new Runnable() {
 			@Override
-			public void onTraversing(@NonNull TraversingState traversingState) {
+			public void run() {
 				viewStack.replaceWithParameters(layout, parameters);
 			}
 		});
@@ -43,9 +43,9 @@ public class ViewStackUtils {
 	 */
 	public static void safeReplaceStack(@NonNull final ViewStack viewStack,
 			@NonNull final List<Pair<Integer, Bundle>> views) {
-		waitForTraversingState(viewStack, TraversingState.IDLE, new ViewStackListener() {
+		waitForTraversingState(viewStack, TraversingState.IDLE, new Runnable() {
 			@Override
-			public void onTraversing(@NonNull TraversingState traversingState) {
+			public void run() {
 				viewStack.replaceStack(views);
 			}
 		});
@@ -57,9 +57,9 @@ public class ViewStackUtils {
 	 */
 	public static void safeReplaceStack(@NonNull final ViewStack viewStack,
 			@LayoutRes final Integer layout, @Nullable final Bundle parameters) {
-		waitForTraversingState(viewStack, TraversingState.IDLE, new ViewStackListener() {
+		waitForTraversingState(viewStack, TraversingState.IDLE, new Runnable() {
 			@Override
-			public void onTraversing(@NonNull TraversingState traversingState) {
+			public void run() {
 				viewStack.replaceStack(layout, parameters);
 			}
 		});
@@ -79,9 +79,9 @@ public class ViewStackUtils {
 	 */
 	public static void safePushWithParameters(@NonNull final ViewStack viewStack,
 			@LayoutRes final int layout, @Nullable final Bundle parameters) {
-		waitForTraversingState(viewStack, TraversingState.IDLE, new ViewStackListener() {
+		waitForTraversingState(viewStack, TraversingState.IDLE, new Runnable() {
 			@Override
-			public void onTraversing(@NonNull TraversingState traversingState) {
+			public void run() {
 				viewStack.pushWithParameters(layout, parameters);
 			}
 		});
@@ -105,9 +105,9 @@ public class ViewStackUtils {
 	 */
 	public static void safePopWithResult(@NonNull final ViewStack viewStack,
 			@Nullable final Object result) {
-		waitForTraversingState(viewStack, TraversingState.IDLE, new ViewStackListener() {
+		waitForTraversingState(viewStack, TraversingState.IDLE, new Runnable() {
 			@Override
-			public void onTraversing(@NonNull TraversingState traversingState) {
+			public void run() {
 				viewStack.popWithResult(result);
 			}
 		});
@@ -121,9 +121,9 @@ public class ViewStackUtils {
 	 */
 	public static void safePopBackToWithResult(@NonNull final ViewStack viewStack,
 			@LayoutRes final int layout, @Nullable final Object result) {
-		waitForTraversingState(viewStack, TraversingState.IDLE, new ViewStackListener() {
+		waitForTraversingState(viewStack, TraversingState.IDLE, new Runnable() {
 			@Override
-			public void onTraversing(@NonNull TraversingState traversingState) {
+			public void run() {
 				viewStack.popBackToWithResult(layout, result);
 			}
 		});
@@ -139,17 +139,17 @@ public class ViewStackUtils {
 	 */
 	@MainThread
 	private static void waitForTraversingState(@NonNull final ViewStack viewStack,
-			@NonNull final TraversingState desiredState, @NonNull final ViewStackListener callback) {
+			@TraversingState final int desiredState, @NonNull final Runnable callback) {
 		ViewUtils.verifyMainThread();
 		if (desiredState == viewStack.getTraversingState()) {
-			callback.onTraversing(desiredState);
+			callback.run();
 		} else {
 			viewStack.addTraversingListener(new ViewStackListener() {
 				@Override
-				public void onTraversing(@NonNull TraversingState traversingState) {
+				public void onTraversing(@TraversingState int traversingState) {
 					if (traversingState == desiredState) {
 						viewStack.removeTraversingListener(this);
-						callback.onTraversing(desiredState);
+						callback.run();
 					}
 				}
 			});

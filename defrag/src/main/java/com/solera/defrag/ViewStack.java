@@ -55,7 +55,8 @@ public class ViewStack extends FrameLayout {
 	private static final String SINGLE_PARAMETER_KEY = "view_stack_single_param";
 	private final Collection<ViewStackListener> viewStackListeners = new CopyOnWriteArrayList<>();
 	private final Deque<ViewStackEntry> viewStack = new ArrayDeque<>();
-	private TraversingState traversingState = TraversingState.IDLE;
+	@TraversingState
+	private int traversingState = TraversingState.IDLE;
 	private AnimationHandler animationHandler = new DefaultAnimationHandler();
 	private Object result;
 
@@ -110,6 +111,7 @@ public class ViewStack extends FrameLayout {
 
 	/**
 	 * Pops the top view from the stack.
+	 *
 	 * @return true if the operation succeeded, or false if there was no view.
 	 */
 	public boolean pop() {
@@ -149,12 +151,12 @@ public class ViewStack extends FrameLayout {
 		viewStackListeners.remove(listener);
 	}
 
-	@NonNull
-	public TraversingState getTraversingState() {
+	@TraversingState
+	public int getTraversingState() {
 		return traversingState;
 	}
 
-	private void setTraversingState(@NonNull TraversingState traversing) {
+	private void setTraversingState(@TraversingState int traversing) {
 		if (traversing != TraversingState.IDLE && traversingState != TraversingState.IDLE) {
 			throw new IllegalStateException("ViewStack is currently traversing");
 		}
@@ -444,7 +446,7 @@ public class ViewStack extends FrameLayout {
 
 	@Nullable
 	private TraversalAnimation createAnimation(@NonNull View from, @NonNull View to,
-									@NonNull TraversalDirection direction) {
+											   @NonNull TraversalDirection direction) {
 		TraversalAnimation animation = null;
 		if (to instanceof HasTraversalAnimation) {
 			animation = ((HasTraversalAnimation) to).createAnimation(from);

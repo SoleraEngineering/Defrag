@@ -98,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
 
 		viewStack.addTraversingListener(new ViewStackListener() {
 			@Override
-			public void onTraversing(@NonNull TraversingState traversingState) {
+			public void onTraversing(@TraversingState int traversingState) {
 				disableUI = traversingState != TraversingState.IDLE;
 			}
 		});
