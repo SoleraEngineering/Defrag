@@ -33,6 +33,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import com.google.auto.value.AutoValue;
+
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
@@ -44,7 +46,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import auto.parcel.AutoParcel;
 
 /**
  * Handles a stack of views, and animations between these views.
@@ -429,7 +430,8 @@ public class ViewStack extends FrameLayout {
 	protected void onRestoreInstanceState(Parcelable state) {
 		final SaveState parcelable = (SaveState) state;
 		for (SaveStateEntry entry : parcelable.stack()) {
-			viewStack.add(new ViewStackEntry(entry.layout(), entry.parameters(), entry.viewState()));
+			//we have to cast to SparseArray as we can't serialize a SparseArray<Parcelable>
+			viewStack.add(new ViewStackEntry(entry.layout(), entry.parameters(), (SparseArray) entry.viewState()));
 		}
 		if (!viewStack.isEmpty()) {
 			addView(viewStack.peek().getView());
@@ -486,14 +488,14 @@ public class ViewStack extends FrameLayout {
 		return parameterBundle;
 	}
 
-	@AutoParcel
+	@AutoValue
 	static abstract class SaveState implements Parcelable {
 		static SaveState newInstance(@NonNull ViewStack viewstack, @NonNull Parcelable superState) {
 			List<SaveStateEntry> stack = new ArrayList<>(viewstack.getViewCount());
 			for (ViewStackEntry entry : viewstack.viewStack) {
 				stack.add(SaveStateEntry.newInstance(entry.mLayout, entry.mParameters, entry.mViewState));
 			}
-			return new AutoParcel_ViewStack_SaveState(stack, superState);
+			return new AutoValue_ViewStack_SaveState(stack, superState);
 		}
 
 		@NonNull
@@ -503,10 +505,10 @@ public class ViewStack extends FrameLayout {
 		abstract Parcelable superState();
 	}
 
-	@AutoParcel
+	@AutoValue
 	static abstract class SaveStateEntry implements Parcelable {
 		static SaveStateEntry newInstance(int layout, @Nullable Bundle parameters, @Nullable SparseArray<Parcelable> viewState) {
-			return new AutoParcel_ViewStack_SaveStateEntry(layout, parameters, viewState);
+			return new AutoValue_ViewStack_SaveStateEntry(layout, parameters, (SparseArray) viewState);
 		}
 
 		@LayoutRes
@@ -515,8 +517,9 @@ public class ViewStack extends FrameLayout {
 		@Nullable
 		abstract Bundle parameters();
 
+		//Auto-value-parcel has a compilation error with SparseArray<Parcelable>
 		@Nullable
-		abstract SparseArray<Parcelable> viewState();
+		abstract SparseArray<Object> viewState();
 	}
 
 	private class ViewStackEntry {
