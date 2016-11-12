@@ -17,8 +17,9 @@ class DefaultAnimationHandler implements AnimationHandler {
 	@Nullable
 	@Override
 	public TraversalAnimation createAnimation(@NonNull View from, @NonNull View to,
-									@NonNull TraversalDirection direction) {
-		boolean backward = direction == TraversalDirection.BACK;
+									@TraversingOperation int operation) {
+
+		boolean forward = operation != TraversingOperation.POP;
 
 		AnimatorSet set = new AnimatorSet();
 
@@ -28,18 +29,18 @@ class DefaultAnimationHandler implements AnimationHandler {
 		set.play(ObjectAnimator.ofFloat(from, View.ALPHA, 0.0f));
 		set.play(ObjectAnimator.ofFloat(to, View.ALPHA, 0.5f, 1.0f));
 
-		if (backward) {
-			set.play(ObjectAnimator.ofFloat(from, View.SCALE_X, 1.1f));
-			set.play(ObjectAnimator.ofFloat(from, View.SCALE_Y, 1.1f));
-			set.play(ObjectAnimator.ofFloat(to, View.SCALE_X, 0.9f, 1.0f));
-			set.play(ObjectAnimator.ofFloat(to, View.SCALE_Y, 0.9f, 1.0f));
-		} else {
+		if (forward) {
 			set.play(ObjectAnimator.ofFloat(from, View.SCALE_X, 0.9f));
 			set.play(ObjectAnimator.ofFloat(from, View.SCALE_Y, 0.9f));
 			set.play(ObjectAnimator.ofFloat(to, View.SCALE_X, 1.1f, 1.0f));
 			set.play(ObjectAnimator.ofFloat(to, View.SCALE_Y, 1.1f, 1.0f));
+		} else {
+			set.play(ObjectAnimator.ofFloat(from, View.SCALE_X, 1.1f));
+			set.play(ObjectAnimator.ofFloat(from, View.SCALE_Y, 1.1f));
+			set.play(ObjectAnimator.ofFloat(to, View.SCALE_X, 0.9f, 1.0f));
+			set.play(ObjectAnimator.ofFloat(to, View.SCALE_Y, 0.9f, 1.0f));
 		}
 
-		return TraversalAnimation.newInstance(set, backward ? TraversalAnimation.BELOW : TraversalAnimation.ABOVE);
+		return TraversalAnimation.newInstance(set, forward ? TraversalAnimation.BELOW : TraversalAnimation.ABOVE);
 	}
 }

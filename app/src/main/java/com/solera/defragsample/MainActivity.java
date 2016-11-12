@@ -26,7 +26,7 @@ import android.view.animation.DecelerateInterpolator;
 
 import com.solera.defrag.AnimationHandler;
 import com.solera.defrag.TraversalAnimation;
-import com.solera.defrag.TraversalDirection;
+import com.solera.defrag.TraversingOperation;
 import com.solera.defrag.TraversingState;
 import com.solera.defrag.ViewStack;
 import com.solera.defrag.ViewStackListener;
@@ -72,8 +72,8 @@ public class MainActivity extends AppCompatActivity {
 		viewStack.setAnimationHandler(new AnimationHandler() {
 			@NonNull
 			@Override
-			public TraversalAnimation createAnimation(@NonNull View from, @NonNull View to, @NonNull TraversalDirection direction) {
-				boolean forward = direction == TraversalDirection.FORWARD;
+			public TraversalAnimation createAnimation(@NonNull View from, @NonNull View to, @TraversingOperation int operation) {
+				boolean forward = operation != TraversingOperation.POP;
 
 				AnimatorSet set = new AnimatorSet();
 

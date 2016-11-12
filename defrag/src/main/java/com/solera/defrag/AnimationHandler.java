@@ -6,5 +6,5 @@ import android.view.View;
 
 public interface AnimationHandler {
 	@Nullable
-	TraversalAnimation createAnimation(@NonNull View from, @NonNull View to, @NonNull TraversalDirection direction);
+	TraversalAnimation createAnimation(@NonNull View from, @NonNull View to, @TraversingOperation int operation);
 }

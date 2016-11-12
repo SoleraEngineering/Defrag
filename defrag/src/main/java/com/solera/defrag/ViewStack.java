@@ -135,7 +135,7 @@ public class ViewStack extends FrameLayout {
 		ViewUtils.waitForMeasure(toView, new ViewUtils.OnMeasuredCallback() {
 			@Override
 			public void onMeasured(View view, int width, int height) {
-				ViewStack.this.runAnimation(fromView, toView, TraversalDirection.BACK);
+				ViewStack.this.runAnimation(fromView, toView, TraversingOperation.POP);
 			}
 		});
 		return true;
@@ -199,7 +199,7 @@ public class ViewStack extends FrameLayout {
 		ViewUtils.waitForMeasure(view, new ViewUtils.OnMeasuredCallback() {
 			@Override
 			public void onMeasured(View view, int width, int height) {
-				ViewStack.this.runAnimation(fromView, view, TraversalDirection.FORWARD);
+				ViewStack.this.runAnimation(fromView, view, TraversingOperation.REPLACE);
 				viewStack.remove(topEntry);
 			}
 		});
@@ -243,7 +243,7 @@ public class ViewStack extends FrameLayout {
 		ViewUtils.waitForMeasure(view, new ViewUtils.OnMeasuredCallback() {
 			@Override
 			public void onMeasured(View view, int width, int height) {
-				ViewStack.this.runAnimation(fromView, view, TraversalDirection.FORWARD);
+				ViewStack.this.runAnimation(fromView, view, TraversingOperation.PUSH);
 			}
 		});
 	}
@@ -309,7 +309,7 @@ public class ViewStack extends FrameLayout {
 			ViewUtils.waitForMeasure(toView, new ViewUtils.OnMeasuredCallback() {
 				@Override
 				public void onMeasured(View view, int width, int height) {
-					ViewStack.this.runAnimation(fromView, toView, TraversalDirection.FORWARD);
+					ViewStack.this.runAnimation(fromView, toView, TraversingOperation.REPLACE);
 					viewStack.remove(fromEntry);
 				}
 			});
@@ -446,22 +446,22 @@ public class ViewStack extends FrameLayout {
 
 	@Nullable
 	private TraversalAnimation createAnimation(@NonNull View from, @NonNull View to,
-											   @NonNull TraversalDirection direction) {
+											   @TraversingOperation int operation) {
 		TraversalAnimation animation = null;
 		if (to instanceof HasTraversalAnimation) {
 			animation = ((HasTraversalAnimation) to).createAnimation(from);
 		}
 
 		if (animation == null) {
-			return animationHandler.createAnimation(from, to, direction);
+			return animationHandler.createAnimation(from, to, operation);
 		} else {
 			return animation;
 		}
 	}
 
 	private void runAnimation(final View from, final View to,
-							  TraversalDirection direction) {
-		final TraversalAnimation traversalAnimation = createAnimation(from, to, direction);
+							  @TraversingOperation int operation) {
+		final TraversalAnimation traversalAnimation = createAnimation(from, to, operation);
 		if (traversalAnimation == null) {
 			removeView(from);
 			setTraversingState(TraversingState.IDLE);
