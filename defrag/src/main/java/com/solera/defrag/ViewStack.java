@@ -17,8 +17,6 @@ package com.solera.defrag;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.animation.AnimatorSet;
-import android.animation.ObjectAnimator;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
@@ -33,7 +31,6 @@ import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
 
 import java.io.Serializable;
@@ -55,11 +52,11 @@ import auto.parcel.AutoParcel;
 public class ViewStack extends FrameLayout {
 	//Explicitly create a new string - as we use this reference as a token
 	public static final Bundle USE_EXISTING_SAVED_STATE = new Bundle();
-	private static final int DEFAULT_ANIMATION_DURATION_IN_MS = 300;
 	private static final String SINGLE_PARAMETER_KEY = "view_stack_single_param";
 	private final Collection<ViewStackListener> viewStackListeners = new CopyOnWriteArrayList<>();
 	private final Deque<ViewStackEntry> viewStack = new ArrayDeque<>();
 	private TraversingState traversingState = TraversingState.IDLE;
+	private AnimationHandler animationHandler = new DefaultAnimationHandler();
 	private Object result;
 
 	public ViewStack(Context context) {
@@ -77,6 +74,13 @@ public class ViewStack extends FrameLayout {
 	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 	public ViewStack(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
 		super(context, attrs, defStyleAttr, defStyleRes);
+	}
+
+	@NonNull
+	public AnimationHandler setAnimationHandler(@NonNull AnimationHandler handler) {
+		final AnimationHandler oldHandler = this.animationHandler;
+		animationHandler = handler;
+		return oldHandler;
 	}
 
 	/**
@@ -124,7 +128,7 @@ public class ViewStack extends FrameLayout {
 		ViewUtils.waitForMeasure(toView, new ViewUtils.OnMeasuredCallback() {
 			@Override
 			public void onMeasured(View view, int width, int height) {
-				ViewStack.this.runAnimation(fromView, toView, Direction.BACK);
+				ViewStack.this.runAnimation(fromView, toView, TraversalDirection.BACK);
 			}
 		});
 		return true;
@@ -188,7 +192,7 @@ public class ViewStack extends FrameLayout {
 		ViewUtils.waitForMeasure(view, new ViewUtils.OnMeasuredCallback() {
 			@Override
 			public void onMeasured(View view, int width, int height) {
-				ViewStack.this.runAnimation(fromView, view, Direction.FORWARD);
+				ViewStack.this.runAnimation(fromView, view, TraversalDirection.FORWARD);
 				viewStack.remove(topEntry);
 			}
 		});
@@ -232,7 +236,7 @@ public class ViewStack extends FrameLayout {
 		ViewUtils.waitForMeasure(view, new ViewUtils.OnMeasuredCallback() {
 			@Override
 			public void onMeasured(View view, int width, int height) {
-				ViewStack.this.runAnimation(fromView, view, Direction.FORWARD);
+				ViewStack.this.runAnimation(fromView, view, TraversalDirection.FORWARD);
 			}
 		});
 	}
@@ -298,7 +302,7 @@ public class ViewStack extends FrameLayout {
 			ViewUtils.waitForMeasure(toView, new ViewUtils.OnMeasuredCallback() {
 				@Override
 				public void onMeasured(View view, int width, int height) {
-					ViewStack.this.runAnimation(fromView, toView, Direction.FORWARD);
+					ViewStack.this.runAnimation(fromView, toView, TraversalDirection.FORWARD);
 					viewStack.remove(fromEntry);
 				}
 			});
@@ -426,9 +430,24 @@ public class ViewStack extends FrameLayout {
 		super.onRestoreInstanceState(parcelable.superState());
 	}
 
+	@NonNull
+	private Animator createAnimation(@NonNull View from, @NonNull View to,
+									@NonNull TraversalDirection direction) {
+		Animator animation = null;
+		if (to instanceof HasTraversalAnimation) {
+			animation = ((HasTraversalAnimation) to).createAnimation(from);
+		}
+
+		if (animation == null) {
+			return animationHandler.createAnimation(from, to, direction);
+		} else {
+			return animation;
+		}
+	}
+
 	private void runAnimation(final View from, final View to,
-							  Direction direction) {
-		Animator animator = createAnimation(from, to, direction);
+							  TraversalDirection direction) {
+		final Animator animator = createAnimation(from, to, direction);
 		animator.addListener(new AnimatorListenerAdapter() {
 			@Override
 			public void onAnimationEnd(Animator animation) {
@@ -437,47 +456,6 @@ public class ViewStack extends FrameLayout {
 			}
 		});
 		animator.start();
-	}
-
-	@NonNull
-	private Animator createAnimation(@NonNull View from, @NonNull View to,
-									 @NonNull Direction direction) {
-		Animator animation = null;
-		if (to instanceof HasTraversalAnimation) {
-			animation = ((HasTraversalAnimation) to).createAnimation(from);
-		}
-
-		if (animation == null) {
-			return createDefaultAnimation(from, to, direction);
-		} else {
-			return animation;
-		}
-	}
-
-	private Animator createDefaultAnimation(View from, View to, Direction direction) {
-		boolean backward = direction == Direction.BACK;
-
-		AnimatorSet set = new AnimatorSet();
-
-		set.setInterpolator(new OvershootInterpolator());
-		set.setDuration(DEFAULT_ANIMATION_DURATION_IN_MS);
-
-		set.play(ObjectAnimator.ofFloat(from, View.ALPHA, 0.0f));
-		set.play(ObjectAnimator.ofFloat(to, View.ALPHA, 0.5f, 1.0f));
-
-		if (backward) {
-			set.play(ObjectAnimator.ofFloat(from, View.SCALE_X, 1.1f));
-			set.play(ObjectAnimator.ofFloat(from, View.SCALE_Y, 1.1f));
-			set.play(ObjectAnimator.ofFloat(to, View.SCALE_X, 0.9f, 1.0f));
-			set.play(ObjectAnimator.ofFloat(to, View.SCALE_Y, 0.9f, 1.0f));
-		} else {
-			set.play(ObjectAnimator.ofFloat(from, View.SCALE_X, 0.9f));
-			set.play(ObjectAnimator.ofFloat(from, View.SCALE_Y, 0.9f));
-			set.play(ObjectAnimator.ofFloat(to, View.SCALE_X, 1.1f, 1.0f));
-			set.play(ObjectAnimator.ofFloat(to, View.SCALE_Y, 1.1f, 1.0f));
-		}
-
-		return set;
 	}
 
 	@Nullable
@@ -491,11 +469,6 @@ public class ViewStack extends FrameLayout {
 		}
 
 		return parameterBundle;
-	}
-
-	private enum Direction {
-		BACK,
-		FORWARD
 	}
 
 	@AutoParcel
