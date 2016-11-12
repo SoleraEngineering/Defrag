@@ -15,7 +15,6 @@
  */
 package com.solera.defragsample;
 
-import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.os.Bundle;
@@ -26,6 +25,7 @@ import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 
 import com.solera.defrag.AnimationHandler;
+import com.solera.defrag.TraversalAnimation;
 import com.solera.defrag.TraversalDirection;
 import com.solera.defrag.TraversingState;
 import com.solera.defrag.ViewStack;
@@ -72,13 +72,12 @@ public class MainActivity extends AppCompatActivity {
 		viewStack.setAnimationHandler(new AnimationHandler() {
 			@NonNull
 			@Override
-			public Animator createAnimation(@NonNull View from, @NonNull View to, @NonNull TraversalDirection direction) {
+			public TraversalAnimation createAnimation(@NonNull View from, @NonNull View to, @NonNull TraversalDirection direction) {
 				boolean forward = direction == TraversalDirection.FORWARD;
 
 				AnimatorSet set = new AnimatorSet();
 
 				set.setInterpolator(new DecelerateInterpolator());
-				set.setDuration(3000);
 
 				final int width = from.getWidth();
 
@@ -92,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
 					set.play(ObjectAnimator.ofFloat(to, View.TRANSLATION_X, 0));
 				}
 
-				return set;
+				return TraversalAnimation.newInstance(set, forward ? TraversalAnimation.ABOVE : TraversalAnimation.BELOW);
 			}
 		});
 

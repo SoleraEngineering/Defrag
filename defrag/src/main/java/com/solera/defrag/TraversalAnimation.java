@@ -21,12 +21,13 @@ public abstract class TraversalAnimation {
 	public @interface AnimateInDrawOrder {
 	}
 
-	static TraversalAnimation newInstance(@NonNull Animator animator, @AnimateInDrawOrder int drawOrder) {
+	@NonNull
+	public static TraversalAnimation newInstance(@NonNull Animator animator, @AnimateInDrawOrder int drawOrder) {
 		return new AutoParcel_TraversalAnimation(animator, drawOrder);
 	}
 
 	@NonNull
-	abstract Animator animation();
+	abstract Animator animator();
 
 	@AnimateInDrawOrder
 	abstract int drawOrder();

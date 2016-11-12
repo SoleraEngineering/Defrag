@@ -413,6 +413,13 @@ public class ViewStack extends FrameLayout {
 	}
 
 	@Override
+	protected int getChildDrawingOrder(int childCount, int index) {
+		//if this method gets called - always reverse the order
+		//There are at most 2 views in this viewgroup
+		return index == 0 ? 1 : 0;
+	}
+
+	@Override
 	protected Parcelable onSaveInstanceState() {
 		final Parcelable parcelable = super.onSaveInstanceState();
 		return SaveState.newInstance(this, parcelable);
@@ -430,10 +437,10 @@ public class ViewStack extends FrameLayout {
 		super.onRestoreInstanceState(parcelable.superState());
 	}
 
-	@NonNull
-	private Animator createAnimation(@NonNull View from, @NonNull View to,
+	@Nullable
+	private TraversalAnimation createAnimation(@NonNull View from, @NonNull View to,
 									@NonNull TraversalDirection direction) {
-		Animator animation = null;
+		TraversalAnimation animation = null;
 		if (to instanceof HasTraversalAnimation) {
 			animation = ((HasTraversalAnimation) to).createAnimation(from);
 		}
@@ -447,15 +454,23 @@ public class ViewStack extends FrameLayout {
 
 	private void runAnimation(final View from, final View to,
 							  TraversalDirection direction) {
-		final Animator animator = createAnimation(from, to, direction);
-		animator.addListener(new AnimatorListenerAdapter() {
-			@Override
-			public void onAnimationEnd(Animator animation) {
-				removeView(from);
-				setTraversingState(TraversingState.IDLE);
-			}
-		});
-		animator.start();
+		final TraversalAnimation traversalAnimation = createAnimation(from, to, direction);
+		if (traversalAnimation == null) {
+			removeView(from);
+			setTraversingState(TraversingState.IDLE);
+		} else {
+			final Animator animator = traversalAnimation.animator();
+			setChildrenDrawingOrderEnabled(traversalAnimation.drawOrder() == TraversalAnimation.BELOW);
+			animator.addListener(new AnimatorListenerAdapter() {
+				@Override
+				public void onAnimationEnd(Animator animation) {
+					removeView(from);
+					setTraversingState(TraversingState.IDLE);
+					setChildrenDrawingOrderEnabled(false);
+				}
+			});
+			animator.start();
+		}
 	}
 
 	@Nullable
