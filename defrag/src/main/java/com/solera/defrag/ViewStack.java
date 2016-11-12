@@ -90,6 +90,7 @@ public class ViewStack extends FrameLayout {
 	 * @return true if the back press event was handled by the viewstack, false otherwise (and so the
 	 * activity should handle this event).
 	 */
+	@Deprecated
 	public boolean onBackPressed() {
 		final View topView = getTopView();
 		if (topView != null && topView instanceof HandlesBackPresses) {
@@ -107,6 +108,10 @@ public class ViewStack extends FrameLayout {
 		return null;
 	}
 
+	/**
+	 * Pops the top view from the stack.
+	 * @return true if the operation succeeded, or false if there was no view.
+	 */
 	public boolean pop() {
 		return popWithResult(1, null);
 	}

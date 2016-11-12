@@ -19,7 +19,9 @@ package com.solera.defrag;
 /**
  * A view that handles back press events. If a view on the {@link ViewStack} implements this, the
  * event will be handled here, rather than the default behaviour ({@link ViewStack#pop()}.
+ * @deprecated use the
  */
+@Deprecated
 public interface HandlesBackPresses {
   /**
    * Handle a back press event.

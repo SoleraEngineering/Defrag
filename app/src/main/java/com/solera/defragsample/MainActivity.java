@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
 		if (disableUI) {
 			return;
 		}
-		if (!viewStack.onBackPressed()) {
+		if (!viewStack.pop()) {
 			super.onBackPressed();
 		}
 	}
