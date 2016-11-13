@@ -53,8 +53,8 @@ public class ViewStack extends FrameLayout {
 	//Explicitly create a new string - as we use this reference as a token
 	public static final Bundle USE_EXISTING_SAVED_STATE = new Bundle();
 	private static final String SINGLE_PARAMETER_KEY = "view_stack_single_param";
+	final Deque<ViewStackEntry> viewStack = new ArrayDeque<>();
 	private final Collection<ViewStackListener> viewStackListeners = new CopyOnWriteArrayList<>();
-	private final Deque<ViewStackEntry> viewStack = new ArrayDeque<>();
 	@TraversingState
 	private int traversingState = TraversingState.IDLE;
 	private AnimationHandler animationHandler = new DefaultAnimationHandler();
@@ -85,10 +85,10 @@ public class ViewStack extends FrameLayout {
 	}
 
 	/**
-	 * It should be called in the {@link Activity#onBackPressed()} in order to handle the backpress
+	 * It should be called in the {@link Activity#onBackPressed()} in order to handle the back press
 	 * events correctly.
 	 *
-	 * @return true if the back press event was handled by the viewstack, false otherwise (and so the
+	 * @return true if the back press event was handled by the ViewStack, false otherwise (and so the
 	 * activity should handle this event).
 	 */
 	@Deprecated
@@ -156,7 +156,7 @@ public class ViewStack extends FrameLayout {
 		return traversingState;
 	}
 
-	private void setTraversingState(@TraversingState int traversing) {
+	void setTraversingState(@TraversingState int traversing) {
 		if (traversing != TraversingState.IDLE && traversingState != TraversingState.IDLE) {
 			throw new IllegalStateException("ViewStack is currently traversing");
 		}
@@ -171,7 +171,8 @@ public class ViewStack extends FrameLayout {
 	 * Returns top layout resource reference or 0 if {@link ViewStack} is empty and
 	 * no top layout has been found.
 	 */
-	@LayoutRes public int getTopLayout() {
+	@LayoutRes
+	public int getTopLayout() {
 		final ViewStackEntry peek = viewStack.peek();
 		return peek != null ? peek.mLayout : 0;
 	}
@@ -444,23 +445,8 @@ public class ViewStack extends FrameLayout {
 		super.onRestoreInstanceState(parcelable.superState());
 	}
 
-	@Nullable
-	private TraversalAnimation createAnimation(@NonNull View from, @NonNull View to,
-											   @TraversingOperation int operation) {
-		TraversalAnimation animation = null;
-		if (to instanceof HasTraversalAnimation) {
-			animation = ((HasTraversalAnimation) to).createAnimation(from);
-		}
-
-		if (animation == null) {
-			return animationHandler.createAnimation(from, to, operation);
-		} else {
-			return animation;
-		}
-	}
-
-	private void runAnimation(final View from, final View to,
-							  @TraversingOperation int operation) {
+	void runAnimation(@NonNull final View from, @NonNull final View to,
+					  @TraversingOperation int operation) {
 		final TraversalAnimation traversalAnimation = createAnimation(from, to, operation);
 		if (traversalAnimation == null) {
 			removeView(from);
@@ -477,6 +463,21 @@ public class ViewStack extends FrameLayout {
 				}
 			});
 			animator.start();
+		}
+	}
+
+	@Nullable
+	private TraversalAnimation createAnimation(@NonNull View from, @NonNull View to,
+											   @TraversingOperation int operation) {
+		TraversalAnimation animation = null;
+		if (to instanceof HasTraversalAnimation) {
+			animation = ((HasTraversalAnimation) to).createAnimation(from);
+		}
+
+		if (animation == null) {
+			return animationHandler.createAnimation(from, to, operation);
+		} else {
+			return animation;
 		}
 	}
 
@@ -528,12 +529,12 @@ public class ViewStack extends FrameLayout {
 
 	private class ViewStackEntry {
 		@LayoutRes
-		private final int mLayout;
+		final int mLayout;
 		@Nullable
-		private Bundle mParameters;
+		Bundle mParameters;
 		@Nullable
-		private SparseArray<Parcelable> mViewState;
-		private WeakReference<View> mViewReference = new WeakReference<>(null);
+		SparseArray<Parcelable> mViewState;
+		WeakReference<View> mViewReference = new WeakReference<>(null);
 
 		ViewStackEntry(@LayoutRes int layout, @Nullable Bundle parameters, @Nullable SparseArray<Parcelable> viewState) {
 			mLayout = layout;
@@ -545,19 +546,20 @@ public class ViewStack extends FrameLayout {
 			mParameters = parameters;
 		}
 
-		private void saveState(@NonNull View view) {
+		void saveState(@NonNull View view) {
 			final SparseArray<Parcelable> parcelableSparseArray = new SparseArray<>();
 			view.saveHierarchyState(parcelableSparseArray);
 			mViewState = parcelableSparseArray;
 		}
 
-		private void restoreState(@NonNull View view) {
+		void restoreState(@NonNull View view) {
 			if (mViewState != null) {
 				view.restoreHierarchyState(mViewState);
 			}
 		}
 
-		private View getView() {
+		@NonNull
+		View getView() {
 			View view = mViewReference.get();
 			if (view == null) {
 				view = LayoutInflater.from(getContext()).inflate(mLayout, ViewStack.this, false);
