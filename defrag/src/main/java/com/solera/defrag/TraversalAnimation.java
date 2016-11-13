@@ -5,13 +5,13 @@ import android.animation.Animator;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 
-import java.lang.annotation.Retention;
+import com.google.auto.value.AutoValue;
 
-import auto.parcel.AutoParcel;
+import java.lang.annotation.Retention;
 
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
-@AutoParcel
+@AutoValue
 public abstract class TraversalAnimation {
 	public static final int ABOVE = 0;
 	public static final int BELOW = 1;
@@ -23,7 +23,7 @@ public abstract class TraversalAnimation {
 
 	@NonNull
 	public static TraversalAnimation newInstance(@NonNull Animator animator, @AnimateInDrawOrder int drawOrder) {
-		return new AutoParcel_TraversalAnimation(animator, drawOrder);
+		return new AutoValue_TraversalAnimation(animator, drawOrder);
 	}
 
 	@NonNull
