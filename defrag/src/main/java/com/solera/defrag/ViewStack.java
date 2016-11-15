@@ -174,12 +174,14 @@ public class ViewStack extends FrameLayout {
 	}
 
 	public void replaceWithParameters(@LayoutRes int layout, @Nullable Bundle parameters) {
+		// push layout instead of replacing it when view stack is empty
+		if (viewStack.isEmpty()) {
+			pushWithParameters(layout, parameters);
+			return;
+		}
 		setTraversingState(TraversingState.REPLACING);
 		final ViewStackEntry viewStackEntry = new ViewStackEntry(layout, parameters, null);
 		final View view = viewStackEntry.getView();
-		if (viewStack.isEmpty()) {
-			throw new IllegalStateException("Replace on an empty stack");
-		}
 
 		final ViewStackEntry topEntry = viewStack.peek();
 		final View fromView = topEntry.getView();
