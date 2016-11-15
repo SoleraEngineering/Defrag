@@ -26,65 +26,65 @@ import rx.subscriptions.CompositeSubscription;
  * Based presenter.
  */
 public abstract class Presenter<T extends PresenterView> {
-  private T view;
-  private CompositeSubscription viewSubscriptions;
+	private T view;
+	private CompositeSubscription viewSubscriptions;
 
-  public final void takeView(@NonNull T view) {
-    if (this.view != null) {
-      throw new IllegalStateException(
-          "Presenter already has the view or the dropview isn't called");
-    }
+	public final void takeView(@NonNull T view) {
+		if (this.view != null) {
+			throw new IllegalStateException(
+					"Presenter already has the view or the dropview isn't called");
+		}
 
-    this.view = view;
-    viewSubscriptions = new CompositeSubscription();
-    onTakeView();
-  }
+		this.view = view;
+		viewSubscriptions = new CompositeSubscription();
+		onTakeView();
+	}
 
-  public final void dropView() {
-    onDropView();
-    view = null;
-    viewSubscriptions.clear();
-  }
+	public final void dropView() {
+		onDropView();
+		view = null;
+		viewSubscriptions.clear();
+	}
 
-  public final void addViewSubscription(@NonNull Subscription subscription) {
-    viewSubscriptions.add(subscription);
-  }
+	public final void addViewSubscription(@NonNull Subscription subscription) {
+		viewSubscriptions.add(subscription);
+	}
 
-  public final void removeViewSubscription(@NonNull Subscription subscription) {
-    viewSubscriptions.remove(subscription);
-  }
+	public final void removeViewSubscription(@NonNull Subscription subscription) {
+		viewSubscriptions.remove(subscription);
+	}
 
-  protected void onTakeView() {
-  }
+	protected void onTakeView() {
+	}
 
-  protected void onDropView() {
-  }
+	protected void onDropView() {
+	}
 
-  protected final Context getContext() {
-    return getView().getContext();
-  }
+	protected final Context getContext() {
+		return getView().getContext();
+	}
 
-  /**
-   * Call this method from within your subscriptions, and this method
-   * will always return an object. Outside and it could potentially
-   * return null, which you should check. (We do not flag this as @Nullable,
-   * since we would have to put ignores everywhere in our lint.)
-   *
-   * @return view that this presenter is attached to.
-   */
-  protected final T getView() {
-    return view;
-  }
+	/**
+	 * Call this method from within your subscriptions, and this method
+	 * will always return an object. Outside and it could potentially
+	 * return null, which you should check. (We do not flag this as @Nullable,
+	 * since we would have to put ignores everywhere in our lint.)
+	 *
+	 * @return view that this presenter is attached to.
+	 */
+	protected final T getView() {
+		return view;
+	}
 
-  /**
-   * Returns default error action, as per Dan Lew advice from common RxJava mistakes.
-   * https://speakerdeck.com/dlew/common-rxjava-mistakes
-   */
-  protected Action1<Throwable> getDefaultErrorAction() {
-    return new Action1<Throwable>() {
-      @Override public void call(Throwable throwable) {
-        throw new OnErrorNotImplementedException("RxError source", throwable);
-      }
-    };
-  }
+	/**
+	 * Returns default error action, as per Dan Lew advice from common RxJava mistakes.
+	 * https://speakerdeck.com/dlew/common-rxjava-mistakes
+	 */
+	protected Action1<Throwable> getDefaultErrorAction() {
+		return new Action1<Throwable>() {
+			@Override public void call(Throwable throwable) {
+				throw new OnErrorNotImplementedException("RxError source", throwable);
+			}
+		};
+	}
 }

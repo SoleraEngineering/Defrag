@@ -20,34 +20,34 @@ import android.support.annotation.NonNull;
 import com.solera.defrag.ViewStack;
 
 public class BreakdownPresenter extends Presenter<BreakdownPresenter.View> {
-  private static final String TOTAL_COST = "totalCost";
-  private static final String TOTAL_PEOPLE = "totalPeople";
+	private static final String TOTAL_COST = "totalCost";
+	private static final String TOTAL_PEOPLE = "totalPeople";
 
-  public static void push(@NonNull ViewStack viewStack, int totalCost, int totalPeople) {
-    final Bundle parameters = new Bundle();
-    parameters.putInt(TOTAL_COST, totalCost);
-    parameters.putInt(TOTAL_PEOPLE, totalPeople);
-    viewStack.pushWithParameters(R.layout.breakdown, parameters);
-  }
+	public static void push(@NonNull ViewStack viewStack, int totalCost, int totalPeople) {
+		final Bundle parameters = new Bundle();
+		parameters.putInt(TOTAL_COST, totalCost);
+		parameters.putInt(TOTAL_PEOPLE, totalPeople);
+		viewStack.pushWithParameters(R.layout.breakdown, parameters);
+	}
 
-  @Override protected void onTakeView() {
-    super.onTakeView();
+	@Override protected void onTakeView() {
+		super.onTakeView();
 
-    final ViewStack viewStack = ViewStackHelper.getViewStack(getContext());
-    final Bundle parameters = viewStack.getParameters(getView());
-    if (parameters == null) {
-      throw new IllegalStateException("Parameters is null");
-    }
+		final ViewStack viewStack = ViewStackHelper.getViewStack(getContext());
+		final Bundle parameters = viewStack.getParameters(getView());
+		if (parameters == null) {
+			throw new IllegalStateException("Parameters is null");
+		}
 
-    final int totalCost = parameters.getInt(TOTAL_COST);
-    final int totalPeople = parameters.getInt(TOTAL_PEOPLE);
-    final int result = totalCost / totalPeople;
+		final int totalCost = parameters.getInt(TOTAL_COST);
+		final int totalPeople = parameters.getInt(TOTAL_PEOPLE);
+		final int result = totalCost / totalPeople;
 
-    getView().setUi(Integer.toString(totalCost), Integer.toString(totalPeople),
-        Integer.toString(result));
-  }
+		getView().setUi(Integer.toString(totalCost), Integer.toString(totalPeople),
+				Integer.toString(result));
+	}
 
-  interface View extends PresenterView {
-    void setUi(@NonNull String totalCost, @NonNull String totalPeople, @NonNull String perPerson);
-  }
+	interface View extends PresenterView {
+		void setUi(@NonNull String totalCost, @NonNull String totalPeople, @NonNull String perPerson);
+	}
 }

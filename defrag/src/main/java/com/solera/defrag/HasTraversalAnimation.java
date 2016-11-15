@@ -26,9 +26,9 @@ import android.view.View;
  * @deprecated use {@link AnimationHandler} to handle traversal animations.
  */
 @Deprecated public interface HasTraversalAnimation {
-  /**
-   * @param fromView the view that we are traversing from.
-   * @return an animator that will be run for the traversal, or null if the default should be run.
-   */
-  @Nullable TraversalAnimation createAnimation(@NonNull View fromView);
+	/**
+	 * @param fromView the view that we are traversing from.
+	 * @return an animator that will be run for the traversal, or null if the default should be run.
+	 */
+	@Nullable TraversalAnimation createAnimation(@NonNull View fromView);
 }

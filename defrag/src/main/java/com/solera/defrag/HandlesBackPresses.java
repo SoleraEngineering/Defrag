@@ -23,11 +23,11 @@ package com.solera.defrag;
  * @deprecated call {@link ViewStack#pop()} directly when receiving the back press event.
  */
 @Deprecated public interface HandlesBackPresses {
-  /**
-   * Handle a back press event.
-   *
-   * @return true if the view handled this event, false otherwise. If the event is not handled here,
-   * the activity should handle it.
-   */
-  boolean onBackPressed();
+	/**
+	 * Handle a back press event.
+	 *
+	 * @return true if the view handled this event, false otherwise. If the event is not handled here,
+	 * the activity should handle it.
+	 */
+	boolean onBackPressed();
 }

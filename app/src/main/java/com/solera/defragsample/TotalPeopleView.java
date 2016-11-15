@@ -31,57 +31,57 @@ import rx.functions.Action1;
 import rx.functions.Func1;
 
 public class TotalPeopleView extends FrameLayout implements TotalPeoplePresenter.View {
-  private final TotalPeoplePresenter presenter = new TotalPeoplePresenter();
-  @Bind(R.id.button) FloatingActionButton floatingActionButton;
-  @Bind(R.id.seekbar) AppCompatSeekBar seekBar;
-  @Bind(R.id.textview_number) TextView textView;
+	private final TotalPeoplePresenter presenter = new TotalPeoplePresenter();
+	@Bind(R.id.button) FloatingActionButton floatingActionButton;
+	@Bind(R.id.seekbar) AppCompatSeekBar seekBar;
+	@Bind(R.id.textview_number) TextView textView;
 
-  public TotalPeopleView(Context context, AttributeSet attrs) {
-    super(context, attrs);
-  }
+	public TotalPeopleView(Context context, AttributeSet attrs) {
+		super(context, attrs);
+	}
 
-  @NonNull @Override public Observable<Integer> onTotalPeopleChanged() {
-    return RxSeekBar.changes(seekBar).map(new Func1<Integer, Integer>() {
-      @Override public Integer call(Integer integer) {
-        return integer / 12;
-      }
-    }).doOnNext(new Action1<Integer>() {
-      @Override public void call(Integer integer) {
-        textView.setText(Integer.toString(integer));
-      }
-    });
-  }
+	@NonNull @Override public Observable<Integer> onTotalPeopleChanged() {
+		return RxSeekBar.changes(seekBar).map(new Func1<Integer, Integer>() {
+			@Override public Integer call(Integer integer) {
+				return integer / 12;
+			}
+		}).doOnNext(new Action1<Integer>() {
+			@Override public void call(Integer integer) {
+				textView.setText(Integer.toString(integer));
+			}
+		});
+	}
 
-  @NonNull @Override public Observable<?> onSubmit() {
-    return RxView.clicks(floatingActionButton);
-  }
+	@NonNull @Override public Observable<?> onSubmit() {
+		return RxView.clicks(floatingActionButton);
+	}
 
-  @Override public void enableSubmit(boolean enable) {
-    floatingActionButton.setEnabled(enable);
-    final float scaleTo = enable ? 1.0f : 0.0f;
-    floatingActionButton.animate().scaleX(scaleTo).scaleY(scaleTo);
-    textView.animate().scaleX(scaleTo).scaleY(scaleTo);
-  }
+	@Override public void enableSubmit(boolean enable) {
+		floatingActionButton.setEnabled(enable);
+		final float scaleTo = enable ? 1.0f : 0.0f;
+		floatingActionButton.animate().scaleX(scaleTo).scaleY(scaleTo);
+		textView.animate().scaleX(scaleTo).scaleY(scaleTo);
+	}
 
-  @Override public void showBreakdown(int totalCost, int totalPeople) {
-    BreakdownPresenter.push(ViewStackHelper.getViewStack(this), totalCost, totalPeople);
-  }
+	@Override public void showBreakdown(int totalCost, int totalPeople) {
+		BreakdownPresenter.push(ViewStackHelper.getViewStack(this), totalCost, totalPeople);
+	}
 
-  @Override protected void onFinishInflate() {
-    super.onFinishInflate();
-    ButterKnife.bind(this);
-  }
+	@Override protected void onFinishInflate() {
+		super.onFinishInflate();
+		ButterKnife.bind(this);
+	}
 
-  @Override protected void onAttachedToWindow() {
-    super.onAttachedToWindow();
-    if (isInEditMode()) {
-      return;
-    }
-    presenter.takeView(this);
-  }
+	@Override protected void onAttachedToWindow() {
+		super.onAttachedToWindow();
+		if (isInEditMode()) {
+			return;
+		}
+		presenter.takeView(this);
+	}
 
-  @Override protected void onDetachedFromWindow() {
-    super.onDetachedFromWindow();
-    presenter.dropView();
-  }
+	@Override protected void onDetachedFromWindow() {
+		super.onDetachedFromWindow();
+		presenter.dropView();
+	}
 }
