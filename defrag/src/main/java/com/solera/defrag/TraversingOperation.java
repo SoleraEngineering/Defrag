@@ -15,17 +15,15 @@
  */
 package com.solera.defrag;
 
-
 import android.support.annotation.IntDef;
-
 import java.lang.annotation.Retention;
 
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 @Retention(SOURCE)
-@IntDef({TraversingOperation.PUSH, TraversingOperation.POP, TraversingOperation.REPLACE})
+@IntDef({ TraversingOperation.PUSH, TraversingOperation.POP, TraversingOperation.REPLACE })
 public @interface TraversingOperation {
-	int PUSH = 1;
-	int POP = 2;
-	int REPLACE = 3;
+  int PUSH = 1;
+  int POP = 2;
+  int REPLACE = 3;
 }

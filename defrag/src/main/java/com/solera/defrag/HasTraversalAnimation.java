@@ -22,10 +22,10 @@ import android.view.View;
 /**
  * A view that defines it's own traversal animator. If a view on the {@link ViewStack} implements
  * this, the animator returned by createAnimation will be run rather than the default.
+ *
  * @deprecated use {@link AnimationHandler} to handle traversal animations.
  */
-@Deprecated
-public interface HasTraversalAnimation {
+@Deprecated public interface HasTraversalAnimation {
   /**
    * @param fromView the view that we are traversing from.
    * @return an animator that will be run for the traversal, or null if the default should be run.

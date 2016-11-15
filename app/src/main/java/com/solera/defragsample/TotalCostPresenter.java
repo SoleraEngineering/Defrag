@@ -16,68 +16,56 @@
 package com.solera.defragsample;
 
 import android.support.annotation.NonNull;
-
 import rx.Observable;
 import rx.Subscription;
 import rx.functions.Action1;
 import rx.functions.Func1;
 
 public class TotalCostPresenter extends Presenter<TotalCostPresenter.View> {
-	interface View extends PresenterView {
-		@NonNull
-		Observable<CharSequence> onTotalCostChanged();
+  @Override protected void onTakeView() {
+    super.onTakeView();
 
-		@NonNull
-		Observable<?> onSubmit();
+    addViewSubscription(onSubmit());
+    addViewSubscription(onTotalCostChanged());
+  }
 
-		void enableSubmit(boolean enable);
+  @NonNull private Subscription onSubmit() {
+    final View view = getView();
+    return view.onSubmit().flatMap(new Func1<Object, Observable<Integer>>() {
+      @Override public Observable<Integer> call(Object ignore) {
+        return view.onTotalCostChanged().map(new Func1<CharSequence, Integer>() {
+          @Override public Integer call(CharSequence charSequence) {
+            return Integer.parseInt(charSequence.toString());
+          }
+        });
+      }
+    }).first().subscribe(new Action1<Integer>() {
+      @Override public void call(Integer totalCost) {
+        view.showTotalPeople(totalCost);
+      }
+    });
+  }
 
-		void showTotalPeople(int totalCost);
-	}
+  @NonNull private Subscription onTotalCostChanged() {
+    final View view = getView();
+    return view.onTotalCostChanged().map(new Func1<CharSequence, Boolean>() {
+      @Override public Boolean call(CharSequence charSequence) {
+        return charSequence.length() != 0;
+      }
+    }).distinctUntilChanged().subscribe(new Action1<Boolean>() {
+      @Override public void call(Boolean isValid) {
+        view.enableSubmit(isValid);
+      }
+    }, getDefaultErrorAction());
+  }
 
-	@Override
-	protected void onTakeView() {
-		super.onTakeView();
+  interface View extends PresenterView {
+    @NonNull Observable<CharSequence> onTotalCostChanged();
 
-		addViewSubscription(onSubmit());
-		addViewSubscription(onTotalCostChanged());
-	}
+    @NonNull Observable<?> onSubmit();
 
-	@NonNull
-	private Subscription onSubmit() {
-		final View view = getView();
-		return view.onSubmit().flatMap(new Func1<Object, Observable<Integer>>() {
-			@Override
-			public Observable<Integer> call(Object ignore) {
-				return view.onTotalCostChanged().map(new Func1<CharSequence, Integer>() {
-					@Override
-					public Integer call(CharSequence charSequence) {
-						return Integer.parseInt(charSequence.toString());
-					}
-				});
-			}
-		}).first().subscribe(new Action1<Integer>() {
-			@Override
-			public void call(Integer totalCost) {
-				view.showTotalPeople(totalCost);
-			}
-		});
-	}
+    void enableSubmit(boolean enable);
 
-	@NonNull
-	private Subscription onTotalCostChanged() {
-		final View view = getView();
-		return view.onTotalCostChanged().map(new Func1<CharSequence, Boolean>() {
-			@Override
-			public Boolean call(CharSequence charSequence) {
-				return charSequence.length() != 0;
-			}
-		}).distinctUntilChanged().subscribe(new Action1<Boolean>() {
-			@Override
-			public void call(Boolean isValid) {
-				view.enableSubmit(isValid);
-			}
-		}, getDefaultErrorAction());
-	}
-
+    void showTotalPeople(int totalCost);
+  }
 }

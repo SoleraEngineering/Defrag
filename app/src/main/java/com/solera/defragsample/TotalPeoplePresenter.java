@@ -16,27 +16,13 @@
 package com.solera.defragsample;
 
 import android.support.annotation.NonNull;
-
 import com.solera.defrag.ViewStack;
-
 import rx.Observable;
 import rx.Subscription;
 import rx.functions.Action1;
 import rx.functions.Func1;
 
 public class TotalPeoplePresenter extends Presenter<TotalPeoplePresenter.View> {
-  public interface View extends PresenterView {
-    @NonNull
-    Observable<Integer> onTotalPeopleChanged();
-
-    @NonNull
-    Observable<?> onSubmit();
-
-    void enableSubmit(boolean enable);
-
-    void showBreakdown(int totalCost, int totalPeople);
-  }
-
   public static void push(@NonNull ViewStack viewStack, int totalCost) {
     viewStack.pushWithParameter(R.layout.totalpeople, totalCost);
   }
@@ -60,7 +46,7 @@ public class TotalPeoplePresenter extends Presenter<TotalPeoplePresenter.View> {
       }
     }).subscribe(new Action1<Integer>() {
       @Override public void call(Integer totalPeople) {
-        getView().showBreakdown(totalCost,totalPeople);
+        getView().showBreakdown(totalCost, totalPeople);
       }
     }, getDefaultErrorAction());
   }
@@ -75,5 +61,15 @@ public class TotalPeoplePresenter extends Presenter<TotalPeoplePresenter.View> {
         getView().enableSubmit(isValid);
       }
     }, getDefaultErrorAction());
+  }
+
+  public interface View extends PresenterView {
+    @NonNull Observable<Integer> onTotalPeopleChanged();
+
+    @NonNull Observable<?> onSubmit();
+
+    void enableSubmit(boolean enable);
+
+    void showBreakdown(int totalCost, int totalPeople);
   }
 }
