@@ -22,6 +22,5 @@ import android.support.annotation.NonNull;
  * Based presenter view interface.
  */
 public interface PresenterView {
-	@NonNull
-	Context getContext();
+	@NonNull Context getContext();
 }

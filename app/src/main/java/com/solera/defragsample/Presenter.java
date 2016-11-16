@@ -17,7 +17,6 @@ package com.solera.defragsample;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-
 import rx.Subscription;
 import rx.exceptions.OnErrorNotImplementedException;
 import rx.functions.Action1;
@@ -83,12 +82,9 @@ public abstract class Presenter<T extends PresenterView> {
 	 */
 	protected Action1<Throwable> getDefaultErrorAction() {
 		return new Action1<Throwable>() {
-			@Override
-			public void call(Throwable throwable) {
+			@Override public void call(Throwable throwable) {
 				throw new OnErrorNotImplementedException("RxError source", throwable);
 			}
 		};
-
 	}
-
 }

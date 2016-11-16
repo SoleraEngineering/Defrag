@@ -17,8 +17,6 @@ package com.solera.defrag;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.animation.AnimatorSet;
-import android.animation.ObjectAnimator;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
@@ -33,9 +31,8 @@ import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
-
+import com.google.auto.value.AutoValue;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
@@ -47,19 +44,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import auto.parcel.AutoParcel;
-
 /**
  * Handles a stack of views, and animations between these views.
  */
 public class ViewStack extends FrameLayout {
 	//Explicitly create a new string - as we use this reference as a token
 	public static final Bundle USE_EXISTING_SAVED_STATE = new Bundle();
-	private static final int DEFAULT_ANIMATION_DURATION_IN_MS = 300;
 	private static final String SINGLE_PARAMETER_KEY = "view_stack_single_param";
+	final Deque<ViewStackEntry> viewStack = new ArrayDeque<>();
 	private final Collection<ViewStackListener> viewStackListeners = new CopyOnWriteArrayList<>();
-	private final Deque<ViewStackEntry> viewStack = new ArrayDeque<>();
-	private TraversingState traversingState = TraversingState.IDLE;
+	@TraversingState private int traversingState = TraversingState.IDLE;
+	private AnimationHandler animationHandler = new DefaultAnimationHandler();
 	private Object result;
 
 	public ViewStack(Context context) {
@@ -79,14 +74,20 @@ public class ViewStack extends FrameLayout {
 		super(context, attrs, defStyleAttr, defStyleRes);
 	}
 
+	@NonNull public AnimationHandler setAnimationHandler(@NonNull AnimationHandler handler) {
+		final AnimationHandler oldHandler = this.animationHandler;
+		animationHandler = handler;
+		return oldHandler;
+	}
+
 	/**
-	 * It should be called in the {@link Activity#onBackPressed()} in order to handle the backpress
+	 * It should be called in the {@link Activity#onBackPressed()} in order to handle the back press
 	 * events correctly.
 	 *
-	 * @return true if the back press event was handled by the viewstack, false otherwise (and so the
+	 * @return true if the back press event was handled by the ViewStack, false otherwise (and so the
 	 * activity should handle this event).
 	 */
-	public boolean onBackPressed() {
+	@Deprecated public boolean onBackPressed() {
 		final View topView = getTopView();
 		if (topView != null && topView instanceof HandlesBackPresses) {
 			return ((HandlesBackPresses) topView).onBackPressed();
@@ -94,8 +95,7 @@ public class ViewStack extends FrameLayout {
 		return pop();
 	}
 
-	@Nullable
-	public View getTopView() {
+	@Nullable public View getTopView() {
 		final ViewStackEntry peek = viewStack.peek();
 		if (peek != null) {
 			return peek.getView();
@@ -103,6 +103,11 @@ public class ViewStack extends FrameLayout {
 		return null;
 	}
 
+	/**
+	 * Pops the top view from the stack.
+	 *
+	 * @return true if the operation succeeded, or false if there was no view.
+	 */
 	public boolean pop() {
 		return popWithResult(1, null);
 	}
@@ -122,9 +127,8 @@ public class ViewStack extends FrameLayout {
 		addView(toView);
 		peek.restoreState(toView);
 		ViewUtils.waitForMeasure(toView, new ViewUtils.OnMeasuredCallback() {
-			@Override
-			public void onMeasured(View view, int width, int height) {
-				ViewStack.this.runAnimation(fromView, toView, Direction.BACK);
+			@Override public void onMeasured(View view, int width, int height) {
+				ViewStack.this.runAnimation(fromView, toView, TraversingOperation.POP);
 			}
 		});
 		return true;
@@ -140,12 +144,11 @@ public class ViewStack extends FrameLayout {
 		viewStackListeners.remove(listener);
 	}
 
-	@NonNull
-	public TraversingState getTraversingState() {
+	@TraversingState public int getTraversingState() {
 		return traversingState;
 	}
 
-	private void setTraversingState(@NonNull TraversingState traversing) {
+	void setTraversingState(@TraversingState int traversing) {
 		if (traversing != TraversingState.IDLE && traversingState != TraversingState.IDLE) {
 			throw new IllegalStateException("ViewStack is currently traversing");
 		}
@@ -188,9 +191,8 @@ public class ViewStack extends FrameLayout {
 		viewStack.push(viewStackEntry);
 		addView(view);
 		ViewUtils.waitForMeasure(view, new ViewUtils.OnMeasuredCallback() {
-			@Override
-			public void onMeasured(View view, int width, int height) {
-				ViewStack.this.runAnimation(fromView, view, Direction.FORWARD);
+			@Override public void onMeasured(View view, int width, int height) {
+				ViewStack.this.runAnimation(fromView, view, TraversingOperation.REPLACE);
 				viewStack.remove(topEntry);
 			}
 		});
@@ -217,8 +219,7 @@ public class ViewStack extends FrameLayout {
 			viewStack.push(viewStackEntry);
 			addView(view);
 			ViewUtils.waitForMeasure(view, new ViewUtils.OnMeasuredCallback() {
-				@Override
-				public void onMeasured(View view, int width, int height) {
+				@Override public void onMeasured(View view, int width, int height) {
 					setTraversingState(TraversingState.IDLE);
 				}
 			});
@@ -232,9 +233,8 @@ public class ViewStack extends FrameLayout {
 		addView(view);
 
 		ViewUtils.waitForMeasure(view, new ViewUtils.OnMeasuredCallback() {
-			@Override
-			public void onMeasured(View view, int width, int height) {
-				ViewStack.this.runAnimation(fromView, view, Direction.FORWARD);
+			@Override public void onMeasured(View view, int width, int height) {
+				ViewStack.this.runAnimation(fromView, view, TraversingOperation.PUSH);
 			}
 		});
 	}
@@ -288,8 +288,7 @@ public class ViewStack extends FrameLayout {
 			removeAllViews();
 			addView(toView);
 			ViewUtils.waitForMeasure(toView, new ViewUtils.OnMeasuredCallback() {
-				@Override
-				public void onMeasured(View view, int width, int height) {
+				@Override public void onMeasured(View view, int width, int height) {
 					setTraversingState(TraversingState.IDLE);
 				}
 			});
@@ -298,9 +297,8 @@ public class ViewStack extends FrameLayout {
 			addView(toView);
 
 			ViewUtils.waitForMeasure(toView, new ViewUtils.OnMeasuredCallback() {
-				@Override
-				public void onMeasured(View view, int width, int height) {
-					ViewStack.this.runAnimation(fromView, toView, Direction.FORWARD);
+				@Override public void onMeasured(View view, int width, int height) {
+					ViewStack.this.runAnimation(fromView, toView, TraversingOperation.REPLACE);
 					viewStack.remove(fromEntry);
 				}
 			});
@@ -319,9 +317,7 @@ public class ViewStack extends FrameLayout {
 	/**
 	 * @return the result (if any) of the last popped view, and clears this result.
 	 */
-	@SuppressWarnings("unchecked")
-	@Nullable
-	public <T> T getResult() {
+	@SuppressWarnings("unchecked") @Nullable public <T> T getResult() {
 		final T result = (T) this.result;
 		this.result = null;
 		return result;
@@ -331,9 +327,8 @@ public class ViewStack extends FrameLayout {
 	 * @param view the view to retrieve the parameters for.
 	 * @return the parameters, or null if none found.
 	 */
-	@SuppressWarnings("unchecked")
-	@Nullable
-	public <T extends Serializable> T getParameter(@NonNull Object view) {
+	@SuppressWarnings("unchecked") @Nullable public <T extends Serializable> T getParameter(
+			@NonNull Object view) {
 		final Bundle parameters = getParameters(view);
 		if (parameters == null) {
 			return null;
@@ -343,7 +338,7 @@ public class ViewStack extends FrameLayout {
 	}
 
 	/**
-	 * @param view      the view to set the parameter for.
+	 * @param view the view to set the parameter for.
 	 * @param parameter the parameter to set.
 	 */
 	public void setParameter(@NonNull Object view, @Nullable Serializable parameter) {
@@ -353,8 +348,7 @@ public class ViewStack extends FrameLayout {
 	/**
 	 * @return the start parameters of the view/presenter
 	 */
-	@Nullable
-	public Bundle getParameters(@NonNull Object view) {
+	@Nullable public Bundle getParameters(@NonNull Object view) {
 		final Iterator<ViewStackEntry> viewStackEntryIterator = viewStack.descendingIterator();
 		while (viewStackEntryIterator.hasNext()) {
 			final ViewStackEntry viewStackEntry = viewStackEntryIterator.next();
@@ -410,17 +404,23 @@ public class ViewStack extends FrameLayout {
 		return popWithResult(count, null);
 	}
 
-	@Override
-	protected Parcelable onSaveInstanceState() {
+	@Override protected int getChildDrawingOrder(int childCount, int index) {
+		//if this method gets called - always reverse the order
+		//There are at most 2 views in this ViewGroup
+		return index == 0 ? 1 : 0;
+	}
+
+	@Override protected Parcelable onSaveInstanceState() {
 		final Parcelable parcelable = super.onSaveInstanceState();
 		return SaveState.newInstance(this, parcelable);
 	}
 
-	@Override
-	protected void onRestoreInstanceState(Parcelable state) {
+	@Override protected void onRestoreInstanceState(Parcelable state) {
 		final SaveState parcelable = (SaveState) state;
 		for (SaveStateEntry entry : parcelable.stack()) {
-			viewStack.add(new ViewStackEntry(entry.layout(), entry.parameters(), entry.viewState()));
+			//we have to cast to SparseArray as we can't serialize a SparseArray<Parcelable>
+			viewStack.add(
+					new ViewStackEntry(entry.layout(), entry.parameters(), (SparseArray) entry.viewState()));
 		}
 		if (!viewStack.isEmpty()) {
 			addView(viewStack.peek().getView());
@@ -428,62 +428,41 @@ public class ViewStack extends FrameLayout {
 		super.onRestoreInstanceState(parcelable.superState());
 	}
 
-	private void runAnimation(final View from, final View to,
-							  Direction direction) {
-		Animator animator = createAnimation(from, to, direction);
-		animator.addListener(new AnimatorListenerAdapter() {
-			@Override
-			public void onAnimationEnd(Animator animation) {
-				removeView(from);
-				setTraversingState(TraversingState.IDLE);
-			}
-		});
-		animator.start();
+	void runAnimation(@NonNull final View from, @NonNull final View to,
+			@TraversingOperation int operation) {
+		final TraversalAnimation traversalAnimation = createAnimation(from, to, operation);
+		if (traversalAnimation == null) {
+			removeView(from);
+			setTraversingState(TraversingState.IDLE);
+		} else {
+			final Animator animator = traversalAnimation.animator();
+			setChildrenDrawingOrderEnabled(traversalAnimation.drawOrder() == TraversalAnimation.BELOW);
+			animator.addListener(new AnimatorListenerAdapter() {
+				@Override public void onAnimationEnd(Animator animation) {
+					removeView(from);
+					setTraversingState(TraversingState.IDLE);
+					setChildrenDrawingOrderEnabled(false);
+				}
+			});
+			animator.start();
+		}
 	}
 
-	@NonNull
-	private Animator createAnimation(@NonNull View from, @NonNull View to,
-									 @NonNull Direction direction) {
-		Animator animation = null;
+	@Nullable private TraversalAnimation createAnimation(@NonNull View from, @NonNull View to,
+			@TraversingOperation int operation) {
+		TraversalAnimation animation = null;
 		if (to instanceof HasTraversalAnimation) {
 			animation = ((HasTraversalAnimation) to).createAnimation(from);
 		}
 
 		if (animation == null) {
-			return createDefaultAnimation(from, to, direction);
+			return animationHandler.createAnimation(from, to, operation);
 		} else {
 			return animation;
 		}
 	}
 
-	private Animator createDefaultAnimation(View from, View to, Direction direction) {
-		boolean backward = direction == Direction.BACK;
-
-		AnimatorSet set = new AnimatorSet();
-
-		set.setInterpolator(new OvershootInterpolator());
-		set.setDuration(DEFAULT_ANIMATION_DURATION_IN_MS);
-
-		set.play(ObjectAnimator.ofFloat(from, View.ALPHA, 0.0f));
-		set.play(ObjectAnimator.ofFloat(to, View.ALPHA, 0.5f, 1.0f));
-
-		if (backward) {
-			set.play(ObjectAnimator.ofFloat(from, View.SCALE_X, 1.1f));
-			set.play(ObjectAnimator.ofFloat(from, View.SCALE_Y, 1.1f));
-			set.play(ObjectAnimator.ofFloat(to, View.SCALE_X, 0.9f, 1.0f));
-			set.play(ObjectAnimator.ofFloat(to, View.SCALE_Y, 0.9f, 1.0f));
-		} else {
-			set.play(ObjectAnimator.ofFloat(from, View.SCALE_X, 0.9f));
-			set.play(ObjectAnimator.ofFloat(from, View.SCALE_Y, 0.9f));
-			set.play(ObjectAnimator.ofFloat(to, View.SCALE_X, 1.1f, 1.0f));
-			set.play(ObjectAnimator.ofFloat(to, View.SCALE_Y, 1.1f, 1.0f));
-		}
-
-		return set;
-	}
-
-	@Nullable
-	private Bundle createSimpleBundle(@Nullable Serializable parameter) {
+	@Nullable private Bundle createSimpleBundle(@Nullable Serializable parameter) {
 		final Bundle parameterBundle;
 		if (parameter == null) {
 			parameterBundle = null;
@@ -495,54 +474,42 @@ public class ViewStack extends FrameLayout {
 		return parameterBundle;
 	}
 
-	private enum Direction {
-		BACK,
-		FORWARD
-	}
-
-	@AutoParcel
-	static abstract class SaveState implements Parcelable {
+	@AutoValue static abstract class SaveState implements Parcelable {
 		static SaveState newInstance(@NonNull ViewStack viewstack, @NonNull Parcelable superState) {
 			List<SaveStateEntry> stack = new ArrayList<>(viewstack.getViewCount());
 			for (ViewStackEntry entry : viewstack.viewStack) {
 				stack.add(SaveStateEntry.newInstance(entry.mLayout, entry.mParameters, entry.mViewState));
 			}
-			return new AutoParcel_ViewStack_SaveState(stack, superState);
+			return new AutoValue_ViewStack_SaveState(stack, superState);
 		}
 
-		@NonNull
-		abstract List<SaveStateEntry> stack();
+		@NonNull abstract List<SaveStateEntry> stack();
 
-		@NonNull
-		abstract Parcelable superState();
+		@NonNull abstract Parcelable superState();
 	}
 
-	@AutoParcel
-	static abstract class SaveStateEntry implements Parcelable {
-		static SaveStateEntry newInstance(int layout, @Nullable Bundle parameters, @Nullable SparseArray<Parcelable> viewState) {
-			return new AutoParcel_ViewStack_SaveStateEntry(layout, parameters, viewState);
+	@AutoValue static abstract class SaveStateEntry implements Parcelable {
+		static SaveStateEntry newInstance(int layout, @Nullable Bundle parameters,
+				@Nullable SparseArray<Parcelable> viewState) {
+			return new AutoValue_ViewStack_SaveStateEntry(layout, parameters, (SparseArray) viewState);
 		}
 
-		@LayoutRes
-		abstract int layout();
+		@LayoutRes abstract int layout();
 
-		@Nullable
-		abstract Bundle parameters();
+		@Nullable abstract Bundle parameters();
 
-		@Nullable
-		abstract SparseArray<Parcelable> viewState();
+		//Auto-value-parcel has a compilation error with SparseArray<Parcelable>
+		@Nullable abstract SparseArray<Object> viewState();
 	}
 
 	private class ViewStackEntry {
-		@LayoutRes
-		private final int mLayout;
-		@Nullable
-		private Bundle mParameters;
-		@Nullable
-		private SparseArray<Parcelable> mViewState;
-		private WeakReference<View> mViewReference = new WeakReference<>(null);
+		@LayoutRes final int mLayout;
+		@Nullable Bundle mParameters;
+		@Nullable SparseArray<Parcelable> mViewState;
+		WeakReference<View> mViewReference = new WeakReference<>(null);
 
-		ViewStackEntry(@LayoutRes int layout, @Nullable Bundle parameters, @Nullable SparseArray<Parcelable> viewState) {
+		ViewStackEntry(@LayoutRes int layout, @Nullable Bundle parameters,
+				@Nullable SparseArray<Parcelable> viewState) {
 			mLayout = layout;
 			mParameters = parameters;
 			mViewState = viewState;
@@ -552,19 +519,19 @@ public class ViewStack extends FrameLayout {
 			mParameters = parameters;
 		}
 
-		private void saveState(@NonNull View view) {
+		void saveState(@NonNull View view) {
 			final SparseArray<Parcelable> parcelableSparseArray = new SparseArray<>();
 			view.saveHierarchyState(parcelableSparseArray);
 			mViewState = parcelableSparseArray;
 		}
 
-		private void restoreState(@NonNull View view) {
+		void restoreState(@NonNull View view) {
 			if (mViewState != null) {
 				view.restoreHierarchyState(mViewState);
 			}
 		}
 
-		private View getView() {
+		@NonNull View getView() {
 			View view = mViewReference.get();
 			if (view == null) {
 				view = LayoutInflater.from(getContext()).inflate(mLayout, ViewStack.this, false);

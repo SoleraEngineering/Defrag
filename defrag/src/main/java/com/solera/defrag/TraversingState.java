@@ -15,9 +15,17 @@
  */
 package com.solera.defrag;
 
-public enum TraversingState {
-  IDLE,
-  PUSHING,
-  POPPING,
-  REPLACING
+import android.support.annotation.IntDef;
+import java.lang.annotation.Retention;
+
+import static java.lang.annotation.RetentionPolicy.SOURCE;
+
+@Retention(SOURCE) @IntDef({
+		TraversingState.IDLE, TraversingState.PUSHING, TraversingState.POPPING,
+		TraversingState.REPLACING
+}) public @interface TraversingState {
+	int IDLE = 0;
+	int PUSHING = 1;
+	int POPPING = 2;
+	int REPLACING = 3;
 }
