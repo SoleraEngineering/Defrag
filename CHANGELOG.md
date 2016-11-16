@@ -1,6 +1,17 @@
 Change Log
 ==========
 
+Version 1.1.0
+----------------------------
+ * Added AnimationHandler a simple api to handle generic transition animations.
+ * Moved enums to IntDef for library size optimization.
+ * Changed nested class access to private methods & attributes to package private as part of library size optimization.
+ * Migrated AutoParcel to AutoValue.
+ * Deprecated HandlesBackPresses - this can be handled in a custom callback from onBackPress in you activity.
+ * Deprecated HasTraversalAnimation - use AnimationHandler.
+ * Call to replace with 0 views will result in a  call to push.
+ * Added replaceStack with one view method.
+
 Version 1.0.0
 ----------------------------
  * Added safe operations helper class.

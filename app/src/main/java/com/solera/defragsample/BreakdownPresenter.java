@@ -17,16 +17,11 @@ package com.solera.defragsample;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-
 import com.solera.defrag.ViewStack;
 
 public class BreakdownPresenter extends Presenter<BreakdownPresenter.View> {
 	private static final String TOTAL_COST = "totalCost";
 	private static final String TOTAL_PEOPLE = "totalPeople";
-
-	interface View extends PresenterView {
-		void setUi(@NonNull String totalCost, @NonNull String totalPeople, @NonNull String perPerson);
-	}
 
 	public static void push(@NonNull ViewStack viewStack, int totalCost, int totalPeople) {
 		final Bundle parameters = new Bundle();
@@ -35,8 +30,7 @@ public class BreakdownPresenter extends Presenter<BreakdownPresenter.View> {
 		viewStack.pushWithParameters(R.layout.breakdown, parameters);
 	}
 
-	@Override
-	protected void onTakeView() {
+	@Override protected void onTakeView() {
 		super.onTakeView();
 
 		final ViewStack viewStack = ViewStackHelper.getViewStack(getContext());
@@ -49,8 +43,11 @@ public class BreakdownPresenter extends Presenter<BreakdownPresenter.View> {
 		final int totalPeople = parameters.getInt(TOTAL_PEOPLE);
 		final int result = totalCost / totalPeople;
 
-		getView().setUi(Integer.toString(totalCost),
-				Integer.toString(totalPeople),
+		getView().setUi(Integer.toString(totalCost), Integer.toString(totalPeople),
 				Integer.toString(result));
+	}
+
+	interface View extends PresenterView {
+		void setUi(@NonNull String totalCost, @NonNull String totalPeople, @NonNull String perPerson);
 	}
 }

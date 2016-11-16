@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.solera.defrag;
 
-/**
- * Interface definition of a callback for when a pop has been called on a stack of one.
- */
-public interface ViewStackEmptyListener {
-	/**
-	 * Called when a pop has been called on a stack containing one.
-	 */
-	void onPopToEmpty();
+import android.support.annotation.IntDef;
+import java.lang.annotation.Retention;
+
+import static java.lang.annotation.RetentionPolicy.SOURCE;
+
+@Retention(SOURCE)
+@IntDef({ TraversingOperation.PUSH, TraversingOperation.POP, TraversingOperation.REPLACE })
+public @interface TraversingOperation {
+	int PUSH = 1;
+	int POP = 2;
+	int REPLACE = 3;
 }

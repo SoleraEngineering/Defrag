@@ -9,7 +9,7 @@ Defrag is available in the jCenter repository:
 
 ```java
 dependencies {
-  compile 'com.solera.defrag:defrag:1.0.0'
+  compile 'com.solera.defrag:defrag:1.1.0'
 }
 ```
 
@@ -44,32 +44,32 @@ is easy!
 Custom transition animations
 ---
 
-It's easy to create custom transition animations, all you have to do is implement HasTraversalAnimation:
+It's easy to create custom transition animations, just call setAnimationHandler with your own AnimationHandler:
 ```java
-public class ViewWithTraversalAnimation extends FrameLayout implements HasTraversalAnimation {
-...
-    /**
-   * @param fromView the view that we are traversing from.
-   * @return an animation that will be run for the traversal, or null if the default should be run.
-   */
-  @Override @Nullable Animator createAnimation(@NonNull View fromView) {
-    final AnimatorSet set = new AnimatorSet();
-    
-    final AnimatorSet exitAnim = new AnimatorSet();
-    exitAnim.setInterpolator(new AccelerateInterpolator());
-    exitAnim.play(ObjectAnimator.ofFloat(fromView, View.ALPHA, 0.0f))
-        .with(ObjectAnimator.ofFloat(fromView, View.TRANSLATION_X, 0f, -200));
+public class CustomAnimationHandler implements AnimationHandler {
+	@Nullable TraversalAnimation createAnimation(@NonNull View from, @NonNull View to,
+			@TraversingOperation int operation) {
+      boolean forward = operation != TraversingOperation.POP;
 
-    setAlpha(0f);
-    final AnimatorSet enterAnim = new AnimatorSet();
-    enterAnim.setInterpolator(new DecelerateInterpolator());
-    enterAnim.setStartDelay(300);
-    enterAnim.play(ObjectAnimator.ofFloat(this, View.ALPHA, 0.0f, 1.0f))
-        .with(ObjectAnimator.ofFloat(this, View.TRANSLATION_X, 100f, 0));
+      AnimatorSet set = new AnimatorSet();
 
-    set.play(exitAnim).with(enterAnim);
-    
-    return set;
+      set.setInterpolator(new DecelerateInterpolator());
+
+      final int width = from.getWidth();
+
+      if (forward) {
+        to.setTranslationX(width);
+        set.play(ObjectAnimator.ofFloat(from, View.TRANSLATION_X, 0 - (width / 3)));
+        set.play(ObjectAnimator.ofFloat(to, View.TRANSLATION_X, 0));
+      } else {
+        to.setTranslationX(0 - (width / 3));
+        set.play(ObjectAnimator.ofFloat(from, View.TRANSLATION_X, width));
+        set.play(ObjectAnimator.ofFloat(to, View.TRANSLATION_X, 0));
+      }
+
+      return TraversalAnimation.newInstance(set,
+          forward ? TraversalAnimation.ABOVE : TraversalAnimation.BELOW);
+    }
   }
 }
 ```
