@@ -244,21 +244,26 @@ public class ViewStack extends FrameLayout {
 	 * is the USE_EXISTING_SAVED_STATE tag, then we will use that saved state for that
 	 * view (if it exists, and is at the right location in the stack) otherwise this will be null.
 	 */
-	public void replaceStack(@NonNull List<Pair<Integer, Bundle>> views) {
-		if (viewStack.isEmpty()) {
-			throw new IllegalStateException("replaceStack called on empty stack.");
+	public void replaceStack(@NonNull final List<Pair<Integer, Bundle>> views) {
+		if (views.isEmpty()) {
+			throw new IllegalArgumentException("Cannot replace stack with an empty views stack");
 		}
+
+		ViewStackEntry fromEntry = null;
+		Iterator<ViewStackEntry> iterator = null;
 		setTraversingState(TraversingState.REPLACING);
+		if (!viewStack.isEmpty()) {
+			fromEntry = viewStack.peek();
 
-		final ViewStackEntry fromEntry = viewStack.peek();
+			//take a copy of the view stack:
+			Deque<ViewStackEntry> copy = new ArrayDeque<>(viewStack);
 
-		//take a copy of the view stack:
-		Deque<ViewStackEntry> copy = new ArrayDeque<>(viewStack);
+			viewStack.clear();
+			viewStack.push(fromEntry);
 
-		viewStack.clear();
-		viewStack.push(fromEntry);
+			iterator = copy.iterator();
+		}
 
-		Iterator<ViewStackEntry> iterator = copy.iterator();
 		for (Pair<Integer, Bundle> view : views) {
 			Bundle savedParameter = view.second;
 			SparseArray<Parcelable> viewState = null;
@@ -281,8 +286,8 @@ public class ViewStack extends FrameLayout {
 
 		final View toView = toEntry.getView();
 
-		if (fromEntry.mLayout == toEntry.mLayout) {
-			//if current topEntry layout is equal to the next proposed topEntry layout
+		if (fromEntry == null || fromEntry.mLayout == toEntry.mLayout) {
+			//if current topEntry layout is null or equal to the next proposed topEntry layout
 			//we cannot do a transition animation
 			viewStack.remove(fromEntry);
 			removeAllViews();
@@ -296,10 +301,11 @@ public class ViewStack extends FrameLayout {
 			final View fromView = fromEntry.getView();
 			addView(toView);
 
+			final ViewStackEntry finalFromEntry = fromEntry;
 			ViewUtils.waitForMeasure(toView, new ViewUtils.OnMeasuredCallback() {
 				@Override public void onMeasured(View view, int width, int height) {
 					ViewStack.this.runAnimation(fromView, toView, TraversingOperation.REPLACE);
-					viewStack.remove(fromEntry);
+					viewStack.remove(finalFromEntry);
 				}
 			});
 		}
