@@ -21,6 +21,7 @@ package com.solera.defrag;
 public interface ViewStackListener {
 	/**
 	 * Called when the ViewStack is changing state.
+	 * @param traversingState the current traversing state.
 	 */
 	void onTraversing(@TraversingState int traversingState);
 }

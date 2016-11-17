@@ -33,7 +33,7 @@ dependencies {
     compile "com.android.support:support-annotations:${android_support_lib_version}"
 
     // Auto value
-    compile "com.google.auto.value:auto-value:${auto_value_lib_version}"
+    provided "com.google.auto.value:auto-value:${auto_value_lib_version}"
     apt "com.google.auto.value:auto-value:${auto_value_lib_version}"
     apt "com.ryanharter.auto.value:auto-value-parcel:0.2.5"
 }
@@ -101,6 +101,12 @@ task sourcesJar(type: Jar) {
 task javadoc(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+afterEvaluate {
+    javadoc.classpath += files(android.libraryVariants.collect { variant ->
+        variant.javaCompile.classpath.files
+    })
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {

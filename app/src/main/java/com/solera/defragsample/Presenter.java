@@ -32,7 +32,7 @@ public abstract class Presenter<T extends PresenterView> {
 	public final void takeView(@NonNull T view) {
 		if (this.view != null) {
 			throw new IllegalStateException(
-					"Presenter already has the view or the dropview isn't called");
+					"Presenter already has the view or the DropView isn't called");
 		}
 
 		this.view = view;
