@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+Version 1.1.1
+----------------------------
+ * ViewStack#replaceStack with an empty stack is now supported.
+ * Updated AutoValue to 1.3
+ * Minor javadoc fixes
+
 Version 1.1.0
 ----------------------------
  * Added AnimationHandler a simple api to handle generic transition animations.
