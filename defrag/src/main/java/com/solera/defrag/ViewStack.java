@@ -314,9 +314,6 @@ public class ViewStack extends FrameLayout {
 	}
 
 	/**
-	 * Replace the current stack with the given view, if the Bundle component
-	 */
-	/**
 	 * Replace the current stack with the given view and parameters.
 	 *
 	 * @param layout the layoutId for the view.
