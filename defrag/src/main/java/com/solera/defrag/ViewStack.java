@@ -22,6 +22,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
@@ -33,6 +34,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
 import com.google.auto.value.AutoValue;
+import com.ryanharter.auto.value.parcel.ParcelAdapter;
+import com.ryanharter.auto.value.parcel.TypeAdapter;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
@@ -505,15 +508,24 @@ public class ViewStack extends FrameLayout {
 	@AutoValue static abstract class SaveStateEntry implements Parcelable {
 		static SaveStateEntry newInstance(int layout, @Nullable Bundle parameters,
 				@Nullable SparseArray<Parcelable> viewState) {
-			return new AutoValue_ViewStack_SaveStateEntry(layout, parameters, (SparseArray) viewState);
+			return new AutoValue_ViewStack_SaveStateEntry(layout, parameters, viewState);
 		}
 
 		@LayoutRes abstract int layout();
 
 		@Nullable abstract Bundle parameters();
 
-		//Auto-value-parcel has a compilation error with SparseArray<Parcelable>
-		@Nullable abstract SparseArray<Object> viewState();
+		@ParcelAdapter(SaveStateEntryViewStateAdapter.class) @Nullable abstract SparseArray<Parcelable> viewState();
+	}
+
+	static class SaveStateEntryViewStateAdapter implements TypeAdapter<SparseArray<Parcelable>> {
+		public SparseArray<Parcelable> fromParcel(Parcel in) {
+			return in.readSparseArray(AutoValue_ViewStack_SaveStateEntry.class.getClassLoader());
+		}
+
+		public void toParcel(SparseArray<Parcelable> value, Parcel dest) {
+			dest.writeSparseArray((SparseArray) value);
+		}
 	}
 
 	private class ViewStackEntry {
