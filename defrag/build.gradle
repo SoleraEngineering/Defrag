@@ -36,6 +36,7 @@ dependencies {
     provided "com.google.auto.value:auto-value:${auto_value_lib_version}"
     apt "com.google.auto.value:auto-value:${auto_value_lib_version}"
     apt "com.ryanharter.auto.value:auto-value-parcel:0.2.5"
+    compile "com.ryanharter.auto.value:auto-value-parcel-adapter:0.2.5"
 }
 
 def siteUrl = 'https://github.com/R3PI/Defrag'
