@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Version 1.1.2
+----------------------------
+ * Fixed BadParcelException when unmarshalling with RecyclerView or Toolbar Views.
+
 Version 1.1.1
 ----------------------------
  * ViewStack#replaceStack with an empty stack is now supported.
