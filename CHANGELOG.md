@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+Version 1.1.3
+----------------------------
+ * Removed dependency on AutoValue
+ * Fixed issue ClassNotFoundException when deserializing custom object.
+
 Version 1.1.2
 ----------------------------
  * Fixed BadParcelException when unmarshalling with RecyclerView or Toolbar Views.
