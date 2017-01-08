@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+Version 1.1.4
+----------------------------
+ * Fixed NullPointerException when fetching parameters that are null.
+
 Version 1.1.3
 ----------------------------
  * Removed dependency on AutoValue
