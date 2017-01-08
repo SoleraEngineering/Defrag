@@ -367,8 +367,10 @@ public class ViewStack extends FrameLayout {
 		while (viewStackEntryIterator.hasNext()) {
 			final ViewStackEntry viewStackEntry = viewStackEntryIterator.next();
 			if (view == viewStackEntry.viewReference.get()) {
-				Bundle bundle = viewStackEntry.parameters;
-				bundle.setClassLoader(view.getClass().getClassLoader());
+				final Bundle bundle = viewStackEntry.parameters;
+				if (bundle != null) {
+					bundle.setClassLoader(view.getClass().getClassLoader());
+				}
 				return bundle;
 			}
 		}
