@@ -10,8 +10,8 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
 public class TraversalAnimation {
 	public static final int ABOVE = 0;
 	public static final int BELOW = 1;
-	private final Animator mAnimator;
-	private final int mDrawOrder;
+	private final Animator animator;
+	private final int drawOrder;
 
 	@NonNull public static TraversalAnimation newInstance(@NonNull Animator animator,
 			@AnimateInDrawOrder int drawOrder) {
@@ -19,16 +19,16 @@ public class TraversalAnimation {
 	}
 
 	private TraversalAnimation(@NonNull Animator animator, @AnimateInDrawOrder int drawOrder) {
-		mAnimator = animator;
-		mDrawOrder = drawOrder;
+		this.animator = animator;
+		this.drawOrder = drawOrder;
 	}
 
 	@NonNull Animator animator() {
-		return mAnimator;
+		return animator;
 	}
 
 	@AnimateInDrawOrder int drawOrder() {
-		return mDrawOrder;
+		return drawOrder;
 	}
 
 	@Override public boolean equals(Object o) {
@@ -37,20 +37,19 @@ public class TraversalAnimation {
 
 		TraversalAnimation that = (TraversalAnimation) o;
 
-		if (mDrawOrder != that.mDrawOrder) return false;
-		return mAnimator != null ? mAnimator.equals(that.mAnimator) : that.mAnimator == null;
+		return drawOrder == that.drawOrder && animator.equals(that.animator);
 	}
 
 	@Override public int hashCode() {
-		int result = mAnimator != null ? mAnimator.hashCode() : 0;
-		result = 31 * result + mDrawOrder;
+		int result = animator.hashCode();
+		result = 31 * result + drawOrder;
 		return result;
 	}
 
 	@Override public String toString() {
 		return "TraversalAnimation{" +
-				"mAnimator=" + mAnimator +
-				", mDrawOrder=" + mDrawOrder +
+				"animator=" + animator +
+				", drawOrder=" + drawOrder +
 				'}';
 	}
 
