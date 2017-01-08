@@ -3,23 +3,55 @@ package com.solera.defrag;
 import android.animation.Animator;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
-import com.google.auto.value.AutoValue;
 import java.lang.annotation.Retention;
 
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
-@AutoValue public abstract class TraversalAnimation {
+public class TraversalAnimation {
 	public static final int ABOVE = 0;
 	public static final int BELOW = 1;
+	private final Animator animator;
+	private final int drawOrder;
 
 	@NonNull public static TraversalAnimation newInstance(@NonNull Animator animator,
 			@AnimateInDrawOrder int drawOrder) {
-		return new AutoValue_TraversalAnimation(animator, drawOrder);
+		return new TraversalAnimation(animator, drawOrder);
 	}
 
-	@NonNull abstract Animator animator();
+	private TraversalAnimation(@NonNull Animator animator, @AnimateInDrawOrder int drawOrder) {
+		this.animator = animator;
+		this.drawOrder = drawOrder;
+	}
 
-	@AnimateInDrawOrder abstract int drawOrder();
+	@NonNull Animator animator() {
+		return animator;
+	}
+
+	@AnimateInDrawOrder int drawOrder() {
+		return drawOrder;
+	}
+
+	@Override public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		TraversalAnimation that = (TraversalAnimation) o;
+
+		return drawOrder == that.drawOrder && animator.equals(that.animator);
+	}
+
+	@Override public int hashCode() {
+		int result = animator.hashCode();
+		result = 31 * result + drawOrder;
+		return result;
+	}
+
+	@Override public String toString() {
+		return "TraversalAnimation{" +
+				"animator=" + animator +
+				", drawOrder=" + drawOrder +
+				'}';
+	}
 
 	@Retention(SOURCE) @IntDef({ ABOVE, BELOW }) public @interface AnimateInDrawOrder {
 	}

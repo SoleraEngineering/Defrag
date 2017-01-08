@@ -33,9 +33,6 @@ import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
-import com.google.auto.value.AutoValue;
-import com.ryanharter.auto.value.parcel.ParcelAdapter;
-import com.ryanharter.auto.value.parcel.TypeAdapter;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
@@ -167,7 +164,7 @@ public class ViewStack extends FrameLayout {
 	 */
 	@LayoutRes public int getTopLayout() {
 		final ViewStackEntry peek = viewStack.peek();
-		return peek != null ? peek.mLayout : 0;
+		return peek != null ? peek.layout : 0;
 	}
 
 	public void replace(@LayoutRes int layout) {
@@ -276,9 +273,9 @@ public class ViewStack extends FrameLayout {
 				savedParameter = null;
 				if (iterator != null && iterator.hasNext()) {
 					final ViewStackEntry next = iterator.next();
-					if (next.mLayout == view.first) {
-						savedParameter = next.mParameters;
-						viewState = next.mViewState;
+					if (next.layout == view.first) {
+						savedParameter = next.parameters;
+						viewState = next.viewState;
 					} else {
 						iterator = null;
 					}
@@ -291,7 +288,7 @@ public class ViewStack extends FrameLayout {
 
 		final View toView = toEntry.getView();
 
-		if (fromEntry == null || fromEntry.mLayout == toEntry.mLayout) {
+		if (fromEntry == null || fromEntry.layout == toEntry.layout) {
 			//if current topEntry layout is null or equal to the next proposed topEntry layout
 			//we cannot do a transition animation
 			viewStack.remove(fromEntry);
@@ -369,8 +366,10 @@ public class ViewStack extends FrameLayout {
 		final Iterator<ViewStackEntry> viewStackEntryIterator = viewStack.descendingIterator();
 		while (viewStackEntryIterator.hasNext()) {
 			final ViewStackEntry viewStackEntry = viewStackEntryIterator.next();
-			if (view == viewStackEntry.mViewReference.get()) {
-				return viewStackEntry.mParameters;
+			if (view == viewStackEntry.viewReference.get()) {
+				Bundle bundle = viewStackEntry.parameters;
+				bundle.setClassLoader(view.getClass().getClassLoader());
+				return bundle;
 			}
 		}
 		return null;
@@ -380,7 +379,7 @@ public class ViewStack extends FrameLayout {
 		final Iterator<ViewStackEntry> viewStackEntryIterator = viewStack.descendingIterator();
 		while (viewStackEntryIterator.hasNext()) {
 			final ViewStackEntry viewStackEntry = viewStackEntryIterator.next();
-			if (view == viewStackEntry.mViewReference.get()) {
+			if (view == viewStackEntry.viewReference.get()) {
 				viewStackEntry.setParameters(parameters);
 				return;
 			}
@@ -409,7 +408,7 @@ public class ViewStack extends FrameLayout {
 		int popCount = 0;
 		while (viewStackEntryIterator.hasNext()) {
 			final ViewStackEntry next = viewStackEntryIterator.next();
-			if (next.mLayout == layout) {
+			if (next.layout == layout) {
 				return popWithResult(popCount, result);
 			}
 			popCount++;
@@ -436,8 +435,7 @@ public class ViewStack extends FrameLayout {
 		final SaveState parcelable = (SaveState) state;
 		for (SaveStateEntry entry : parcelable.stack()) {
 			//we have to cast to SparseArray as we can't serialize a SparseArray<Parcelable>
-			viewStack.add(
-					new ViewStackEntry(entry.layout(), entry.parameters(), (SparseArray) entry.viewState()));
+			viewStack.add(new ViewStackEntry(entry.layout(), entry.parameters(), entry.viewState()));
 		}
 		if (!viewStack.isEmpty()) {
 			addView(viewStack.peek().getView());
@@ -491,77 +489,216 @@ public class ViewStack extends FrameLayout {
 		return parameterBundle;
 	}
 
-	@AutoValue static abstract class SaveState implements Parcelable {
+	static class SaveState implements Parcelable {
+		private List<SaveStateEntry> stack;
+		private Parcelable superState;
+
 		static SaveState newInstance(@NonNull ViewStack viewstack, @NonNull Parcelable superState) {
 			List<SaveStateEntry> stack = new ArrayList<>(viewstack.getViewCount());
 			for (ViewStackEntry entry : viewstack.viewStack) {
-				stack.add(SaveStateEntry.newInstance(entry.mLayout, entry.mParameters, entry.mViewState));
+				stack.add(SaveStateEntry.newInstance(entry.layout, entry.parameters, entry.viewState));
 			}
-			return new AutoValue_ViewStack_SaveState(stack, superState);
+			return new SaveState(stack, superState);
 		}
 
-		@NonNull abstract List<SaveStateEntry> stack();
+		SaveState(@NonNull List<SaveStateEntry> stack, @NonNull Parcelable superState) {
+			this.stack = stack;
+			this.superState = superState;
+		}
 
-		@NonNull abstract Parcelable superState();
+		SaveState(Parcel in) {
+			if (in.readByte() == 0x01) {
+				stack = new ArrayList<>();
+				in.readList(stack, SaveStateEntry.class.getClassLoader());
+			} else {
+				stack = null;
+			}
+			superState = in.readParcelable(Parcelable.class.getClassLoader());
+		}
+
+		@NonNull List<SaveStateEntry> stack() {
+			return stack;
+		}
+
+		@NonNull Parcelable superState() {
+			return superState;
+		}
+
+		@Override public int describeContents() {
+			return 0;
+		}
+
+		@Override public void writeToParcel(Parcel dest, int flags) {
+			if (stack == null) {
+				dest.writeByte((byte) (0x00));
+			} else {
+				dest.writeByte((byte) (0x01));
+				dest.writeList(stack);
+			}
+			dest.writeParcelable(superState, PARCELABLE_WRITE_RETURN_VALUE);
+		}
+
+		@Override public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+
+			SaveState saveState = (SaveState) o;
+
+			return stack != null ? stack.equals(saveState.stack)
+					: saveState.stack == null && (superState != null ? superState.equals(saveState.superState)
+							: saveState.superState == null);
+		}
+
+		@Override public int hashCode() {
+			int result = stack != null ? stack.hashCode() : 0;
+			result = 31 * result + (superState != null ? superState.hashCode() : 0);
+			return result;
+		}
+
+		@Override public String toString() {
+			return "SaveState{" +
+					"stack=" + stack +
+					", superState=" + superState +
+					'}';
+		}
+
+
+		@SuppressWarnings("unused")
+		public static final Parcelable.Creator<SaveState> CREATOR = new Parcelable.Creator<SaveState>() {
+			@Override
+			public SaveState createFromParcel(Parcel in) {
+				return new SaveState(in);
+			}
+
+			@Override
+			public SaveState[] newArray(int size) {
+				return new SaveState[size];
+			}
+		};
 	}
 
-	@AutoValue static abstract class SaveStateEntry implements Parcelable {
-		static SaveStateEntry newInstance(int layout, @Nullable Bundle parameters,
+	static class SaveStateEntry implements Parcelable {
+		@LayoutRes private final int layout;
+		private final Bundle parameters;
+		private final SparseArray<Parcelable> viewState;
+
+		static SaveStateEntry newInstance(@LayoutRes int layout, @Nullable Bundle parameters,
 				@Nullable SparseArray<Parcelable> viewState) {
-			return new AutoValue_ViewStack_SaveStateEntry(layout, parameters, viewState);
+			return new SaveStateEntry(layout, parameters, viewState);
 		}
 
-		@LayoutRes abstract int layout();
-
-		@Nullable abstract Bundle parameters();
-
-		@ParcelAdapter(SaveStateEntryViewStateAdapter.class) @Nullable abstract SparseArray<Parcelable> viewState();
-	}
-
-	static class SaveStateEntryViewStateAdapter implements TypeAdapter<SparseArray<Parcelable>> {
-		public SparseArray<Parcelable> fromParcel(Parcel in) {
-			return in.readSparseArray(AutoValue_ViewStack_SaveStateEntry.class.getClassLoader());
+		SaveStateEntry(@LayoutRes int layout, @Nullable Bundle parameters,
+				@Nullable SparseArray<Parcelable> viewState) {
+			this.layout = layout;
+			this.parameters = parameters;
+			this.viewState = viewState;
 		}
 
-		public void toParcel(SparseArray<Parcelable> value, Parcel dest) {
-			dest.writeSparseArray((SparseArray) value);
+		SaveStateEntry(Parcel in) {
+			layout = in.readInt();
+			parameters = in.readBundle();
+			//noinspection unchecked
+			viewState = (SparseArray) in.readValue(SparseArray.class.getClassLoader());
 		}
+
+		@LayoutRes int layout() {
+			return layout;
+		}
+
+		@Nullable Bundle parameters() {
+			return parameters;
+		}
+
+		@Nullable SparseArray<Parcelable> viewState() {
+			return viewState;
+		}
+
+		@Override public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+
+			SaveStateEntry that = (SaveStateEntry) o;
+
+			return layout == that.layout && (parameters != null ? parameters.equals(that.parameters)
+					: that.parameters == null && (viewState != null ? viewState.equals(that.viewState)
+							: that.viewState == null));
+		}
+
+		@Override public int hashCode() {
+			int result = layout;
+			result = 31 * result + (parameters != null ? parameters.hashCode() : 0);
+			result = 31 * result + (viewState != null ? viewState.hashCode() : 0);
+			return result;
+		}
+
+		@Override public String toString() {
+			return "SaveStateEntry{" +
+					"layout=" + layout +
+					", parameters=" + parameters +
+					", viewState=" + viewState +
+					'}';
+		}
+
+		@Override
+		public int describeContents() {
+			return 0;
+		}
+
+		@Override
+		public void writeToParcel(Parcel dest, int flags) {
+			dest.writeInt(layout);
+			dest.writeBundle(parameters);
+			dest.writeValue(viewState);
+		}
+
+		@SuppressWarnings("unused")
+		public static final Parcelable.Creator<SaveStateEntry> CREATOR = new Parcelable.Creator<SaveStateEntry>() {
+			@Override
+			public SaveStateEntry createFromParcel(Parcel in) {
+				return new SaveStateEntry(in);
+			}
+
+			@Override
+			public SaveStateEntry[] newArray(int size) {
+				return new SaveStateEntry[size];
+			}
+		};
 	}
 
 	private class ViewStackEntry {
-		@LayoutRes final int mLayout;
-		@Nullable Bundle mParameters;
-		@Nullable SparseArray<Parcelable> mViewState;
-		WeakReference<View> mViewReference = new WeakReference<>(null);
+		@LayoutRes final int layout;
+		@Nullable Bundle parameters;
+		@Nullable SparseArray<Parcelable> viewState;
+		WeakReference<View> viewReference = new WeakReference<>(null);
 
 		ViewStackEntry(@LayoutRes int layout, @Nullable Bundle parameters,
 				@Nullable SparseArray<Parcelable> viewState) {
-			mLayout = layout;
-			mParameters = parameters;
-			mViewState = viewState;
+			this.layout = layout;
+			this.parameters = parameters;
+			this.viewState = viewState;
 		}
 
 		void setParameters(@Nullable Bundle parameters) {
-			mParameters = parameters;
+			this.parameters = parameters;
 		}
 
 		void saveState(@NonNull View view) {
 			final SparseArray<Parcelable> parcelableSparseArray = new SparseArray<>();
 			view.saveHierarchyState(parcelableSparseArray);
-			mViewState = parcelableSparseArray;
+			viewState = parcelableSparseArray;
 		}
 
 		void restoreState(@NonNull View view) {
-			if (mViewState != null) {
-				view.restoreHierarchyState(mViewState);
+			if (viewState != null) {
+				view.restoreHierarchyState(viewState);
 			}
 		}
 
 		@NonNull View getView() {
-			View view = mViewReference.get();
+			View view = viewReference.get();
 			if (view == null) {
-				view = LayoutInflater.from(getContext()).inflate(mLayout, ViewStack.this, false);
-				mViewReference = new WeakReference<>(view);
+				view = LayoutInflater.from(getContext()).inflate(layout, ViewStack.this, false);
+				viewReference = new WeakReference<>(view);
 			}
 			return view;
 		}
