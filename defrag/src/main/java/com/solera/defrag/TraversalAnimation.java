@@ -37,12 +37,11 @@ public class TraversalAnimation {
 
 		TraversalAnimation that = (TraversalAnimation) o;
 
-		if (drawOrder != that.drawOrder) return false;
-		return animator != null ? animator.equals(that.animator) : that.animator == null;
+		return drawOrder == that.drawOrder && animator.equals(that.animator);
 	}
 
 	@Override public int hashCode() {
-		int result = animator != null ? animator.hashCode() : 0;
+		int result = animator.hashCode();
 		result = 31 * result + drawOrder;
 		return result;
 	}

@@ -544,10 +544,9 @@ public class ViewStack extends FrameLayout {
 
 			SaveState saveState = (SaveState) o;
 
-			if (stack != null ? !stack.equals(saveState.stack) : saveState.stack != null)
-				return false;
-			return superState != null ? superState.equals(saveState.superState)
-					: saveState.superState == null;
+			return stack != null ? stack.equals(saveState.stack)
+					: saveState.stack == null && (superState != null ? superState.equals(saveState.superState)
+							: saveState.superState == null);
 		}
 
 		@Override public int hashCode() {
@@ -598,6 +597,7 @@ public class ViewStack extends FrameLayout {
 		SaveStateEntry(Parcel in) {
 			layout = in.readInt();
 			parameters = in.readBundle();
+			//noinspection unchecked
 			viewState = (SparseArray) in.readValue(SparseArray.class.getClassLoader());
 		}
 
@@ -619,11 +619,9 @@ public class ViewStack extends FrameLayout {
 
 			SaveStateEntry that = (SaveStateEntry) o;
 
-			if (layout != that.layout) return false;
-			if (parameters != null ? !parameters.equals(that.parameters) : that.parameters != null) {
-				return false;
-			}
-			return viewState != null ? viewState.equals(that.viewState) : that.viewState == null;
+			return layout == that.layout && (parameters != null ? parameters.equals(that.parameters)
+					: that.parameters == null && (viewState != null ? viewState.equals(that.viewState)
+							: that.viewState == null));
 		}
 
 		@Override public int hashCode() {
@@ -685,7 +683,7 @@ public class ViewStack extends FrameLayout {
 		}
 
 		void saveState(@NonNull View view) {
-			final SparseArray<Parcelable> parcelableSparseArray = new SparseArray<Parcelable>();
+			final SparseArray<Parcelable> parcelableSparseArray = new SparseArray<>();
 			view.saveHierarchyState(parcelableSparseArray);
 			viewState = parcelableSparseArray;
 		}
