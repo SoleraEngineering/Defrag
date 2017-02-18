@@ -18,7 +18,6 @@ package com.solera.defrag;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
@@ -79,21 +78,6 @@ public class ViewStack extends FrameLayout {
 		final AnimationHandler oldHandler = this.animationHandler;
 		animationHandler = handler;
 		return oldHandler;
-	}
-
-	/**
-	 * It should be called in the {@link Activity#onBackPressed()} in order to handle the back press
-	 * events correctly.
-	 *
-	 * @return true if the back press event was handled by the ViewStack, false otherwise (and so the
-	 * activity should handle this event).
-	 */
-	@Deprecated public boolean onBackPressed() {
-		final View topView = getTopView();
-		if (topView != null && topView instanceof HandlesBackPresses) {
-			return ((HandlesBackPresses) topView).onBackPressed();
-		}
-		return pop();
 	}
 
 	@Nullable public View getTopView() {
@@ -482,16 +466,7 @@ public class ViewStack extends FrameLayout {
 
 	@Nullable private TraversalAnimation createAnimation(@NonNull View from, @NonNull View to,
 			@TraversingOperation int operation) {
-		TraversalAnimation animation = null;
-		if (to instanceof HasTraversalAnimation) {
-			animation = ((HasTraversalAnimation) to).createAnimation(from);
-		}
-
-		if (animation == null) {
-			return animationHandler.createAnimation(from, to, operation);
-		} else {
-			return animation;
-		}
+		return animationHandler.createAnimation(from, to, operation);
 	}
 
 	@Nullable private Bundle createSimpleBundle(@Nullable Serializable parameter) {
@@ -520,8 +495,8 @@ public class ViewStack extends FrameLayout {
 						return new SaveState[size];
 					}
 				};
-		private List<SaveStateEntry> stack;
-		private Parcelable superState;
+		private final List<SaveStateEntry> stack;
+		private final Parcelable superState;
 
 		SaveState(@NonNull List<SaveStateEntry> stack, @NonNull Parcelable superState) {
 			this.stack = stack;
