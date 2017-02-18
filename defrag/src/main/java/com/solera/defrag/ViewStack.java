@@ -42,6 +42,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -389,6 +390,20 @@ public class ViewStack extends FrameLayout {
 	}
 
 	/**
+	 * @return the layout id for the given view, or {@link NoSuchElementException} if not found.
+	 */
+	@LayoutRes public int getLayoutId(@NonNull Object view) {
+		final Iterator<ViewStackEntry> viewStackEntryIterator = viewStack.descendingIterator();
+		while (viewStackEntryIterator.hasNext()) {
+			final ViewStackEntry viewStackEntry = viewStackEntryIterator.next();
+			if (view == viewStackEntry.viewReference.get()) {
+				return viewStackEntry.layout;
+			}
+		}
+		throw new NoSuchElementException("View not found");
+	}
+
+	/**
 	 * Pop off the stack, with the given result.
 	 *
 	 * @param result the result.
@@ -492,16 +507,21 @@ public class ViewStack extends FrameLayout {
 	}
 
 	static class SaveState implements Parcelable {
+		@SuppressWarnings("unused")
+		public static final Parcelable.Creator<SaveState> CREATOR =
+				new Parcelable.Creator<SaveState>() {
+					@Override
+					public SaveState createFromParcel(Parcel in) {
+						return new SaveState(in);
+					}
+
+					@Override
+					public SaveState[] newArray(int size) {
+						return new SaveState[size];
+					}
+				};
 		private List<SaveStateEntry> stack;
 		private Parcelable superState;
-
-		static SaveState newInstance(@NonNull ViewStack viewstack, @NonNull Parcelable superState) {
-			List<SaveStateEntry> stack = new ArrayList<>(viewstack.getViewCount());
-			for (ViewStackEntry entry : viewstack.viewStack) {
-				stack.add(SaveStateEntry.newInstance(entry.layout, entry.parameters, entry.viewState));
-			}
-			return new SaveState(stack, superState);
-		}
 
 		SaveState(@NonNull List<SaveStateEntry> stack, @NonNull Parcelable superState) {
 			this.stack = stack;
@@ -516,6 +536,14 @@ public class ViewStack extends FrameLayout {
 				stack = null;
 			}
 			superState = in.readParcelable(Parcelable.class.getClassLoader());
+		}
+
+		static SaveState newInstance(@NonNull ViewStack viewstack, @NonNull Parcelable superState) {
+			List<SaveStateEntry> stack = new ArrayList<>(viewstack.getViewCount());
+			for (ViewStackEntry entry : viewstack.viewStack) {
+				stack.add(SaveStateEntry.newInstance(entry.layout, entry.parameters, entry.viewState));
+			}
+			return new SaveState(stack, superState);
 		}
 
 		@NonNull List<SaveStateEntry> stack() {
@@ -563,31 +591,25 @@ public class ViewStack extends FrameLayout {
 					", superState=" + superState +
 					'}';
 		}
-
-
-		@SuppressWarnings("unused")
-		public static final Parcelable.Creator<SaveState> CREATOR = new Parcelable.Creator<SaveState>() {
-			@Override
-			public SaveState createFromParcel(Parcel in) {
-				return new SaveState(in);
-			}
-
-			@Override
-			public SaveState[] newArray(int size) {
-				return new SaveState[size];
-			}
-		};
 	}
 
 	static class SaveStateEntry implements Parcelable {
+		@SuppressWarnings("unused")
+		public static final Parcelable.Creator<SaveStateEntry> CREATOR =
+				new Parcelable.Creator<SaveStateEntry>() {
+					@Override
+					public SaveStateEntry createFromParcel(Parcel in) {
+						return new SaveStateEntry(in);
+					}
+
+					@Override
+					public SaveStateEntry[] newArray(int size) {
+						return new SaveStateEntry[size];
+					}
+				};
 		@LayoutRes private final int layout;
 		private final Bundle parameters;
 		private final SparseArray<Parcelable> viewState;
-
-		static SaveStateEntry newInstance(@LayoutRes int layout, @Nullable Bundle parameters,
-				@Nullable SparseArray<Parcelable> viewState) {
-			return new SaveStateEntry(layout, parameters, viewState);
-		}
 
 		SaveStateEntry(@LayoutRes int layout, @Nullable Bundle parameters,
 				@Nullable SparseArray<Parcelable> viewState) {
@@ -601,6 +623,11 @@ public class ViewStack extends FrameLayout {
 			parameters = in.readBundle();
 			//noinspection unchecked
 			viewState = (SparseArray) in.readValue(SparseArray.class.getClassLoader());
+		}
+
+		static SaveStateEntry newInstance(@LayoutRes int layout, @Nullable Bundle parameters,
+				@Nullable SparseArray<Parcelable> viewState) {
+			return new SaveStateEntry(layout, parameters, viewState);
 		}
 
 		@LayoutRes int layout() {
@@ -652,19 +679,6 @@ public class ViewStack extends FrameLayout {
 			dest.writeBundle(parameters);
 			dest.writeValue(viewState);
 		}
-
-		@SuppressWarnings("unused")
-		public static final Parcelable.Creator<SaveStateEntry> CREATOR = new Parcelable.Creator<SaveStateEntry>() {
-			@Override
-			public SaveStateEntry createFromParcel(Parcel in) {
-				return new SaveStateEntry(in);
-			}
-
-			@Override
-			public SaveStateEntry[] newArray(int size) {
-				return new SaveStateEntry[size];
-			}
-		};
 	}
 
 	private class ViewStackEntry {
