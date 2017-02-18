@@ -495,8 +495,8 @@ public class ViewStack extends FrameLayout {
 						return new SaveState[size];
 					}
 				};
-		private List<SaveStateEntry> stack;
-		private Parcelable superState;
+		private final List<SaveStateEntry> stack;
+		private final Parcelable superState;
 
 		SaveState(@NonNull List<SaveStateEntry> stack, @NonNull Parcelable superState) {
 			this.stack = stack;
